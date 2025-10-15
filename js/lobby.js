@@ -1,5 +1,5 @@
 // ========================================
-// LOBBY SYSTEM - FUNKTIONIERENDES PEER-TO-PEER
+// LOBBY SYSTEM - VERBESSERT MIT FARBEXTRAKTION
 // ========================================
 
 console.log('🎮 P2P Lobby System lädt...');
@@ -11,6 +11,131 @@ let currentUser = null;
 let peer = null;
 let connections = [];
 let players = [];
+
+// ========================================
+// FARBEXTRAKTION FÜR AVATARE
+// ========================================
+function extractDominantColor(imageUrl, callback) {
+  const img = new Image();
+  img.crossOrigin = 'Anonymous';
+
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    ctx.drawImage(img, 0, 0);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    let r = 0, g = 0, b = 0;
+    let count = 0;
+
+    for (let i = 0; i < data.length; i += 40) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count++;
+    }
+
+    r = Math.floor(r / count);
+    g = Math.floor(g / count);
+    b = Math.floor(b / count);
+
+    const hsl = rgbToHsl(r, g, b);
+
+    let targetHue = hsl[0];
+    const purpleHue = 0.75;
+
+    let hueDiff = Math.abs(targetHue - purpleHue);
+    if (hueDiff > 0.5) hueDiff = 1 - hueDiff;
+
+    if (hueDiff > 0.15) {
+      targetHue = purpleHue * 0.7 + targetHue * 0.3;
+    }
+
+    hsl[1] = Math.min(hsl[1] * 1.8, 0.9);
+    hsl[2] = Math.max(0.45, Math.min(hsl[2], 0.65));
+
+    const rgb = hslToRgb(targetHue, hsl[1], hsl[2]);
+    const color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+
+    callback(color);
+  };
+
+  img.onerror = function() {
+    callback('#7c3aed');
+  };
+
+  img.src = imageUrl;
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+
+  if (max === min) {
+    h = s = 0;
+  } else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  return [h, s, l];
+}
+
+function hslToRgb(h, s, l) {
+  let r, g, b;
+
+  if (s === 0) {
+    r = g = b = l;
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function applyPlayerColor(playerCard, color) {
+  const rgb = color.match(/\d+/g).map(Number);
+
+  playerCard.style.borderColor = color;
+  playerCard.style.boxShadow = `0 15px 40px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
+
+  const avatar = playerCard.querySelector('.player-avatar');
+  if (avatar) {
+    avatar.style.borderColor = color;
+    avatar.style.boxShadow = `0 0 25px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9)`;
+  }
+
+  const scoreElement = playerCard.querySelector('.player-score');
+  if (scoreElement) {
+    scoreElement.style.borderColor = color;
+    scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+  }
+}
 
 // ========================================
 // INITIALISIERUNG
@@ -31,14 +156,9 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Lade User-Daten
   loadCurrentUser();
-
-  // UI initialisieren
   initUI();
   setupEventListeners();
-
-  // Starte P2P-Verbindung mit kurzer Verzögerung
   setTimeout(() => initPeerConnection(), 300);
 });
 
@@ -48,9 +168,8 @@ document.addEventListener('DOMContentLoaded', function() {
 function initPeerConnection() {
   console.log('🌐 Initialisiere P2P...');
 
-  // Verbesserte PeerJS-Konfiguration
   const peerConfig = {
-    debug: 2, // Aktiviere Debug-Logs
+    debug: 2,
     config: {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
@@ -60,7 +179,6 @@ function initPeerConnection() {
   };
 
   if (isHost) {
-    // HOST: Erstelle Peer mit Lobby-Code als ID
     console.log('🏠 Erstelle Host-Peer mit Code:', lobbyCode);
     showNotification('Erstelle Lobby...', 'info', 2000);
 
@@ -68,7 +186,6 @@ function initPeerConnection() {
 
     peer.on('open', function(id) {
       console.log('✅ Host-Peer bereit mit ID:', id);
-      console.log('📡 Host wartet auf Verbindungen...');
       showNotification('✅ Lobby bereit! Code: ' + lobbyCode, 'success', 3000);
       displayHostInfo();
     });
@@ -81,30 +198,19 @@ function initPeerConnection() {
 
     peer.on('error', function(err) {
       console.error('❌ Host Peer Fehler:', err);
-
       if (err.type === 'unavailable-id') {
-        showNotification('⚠️ Lobby-Code bereits vergeben! Bitte neue Lobby erstellen.', 'error', 5000);
+        showNotification('⚠️ Lobby-Code bereits vergeben!', 'error', 5000);
         setTimeout(() => {
           localStorage.removeItem('lobbyCode');
           localStorage.removeItem('isHost');
           window.location.href = 'index.html';
         }, 5000);
-      } else if (err.type === 'network') {
-        showNotification('❌ Netzwerkfehler. Prüfe deine Internetverbindung.', 'error', 5000);
-      } else if (err.type === 'server-error') {
-        showNotification('❌ Server-Fehler. Bitte versuche es erneut.', 'error', 5000);
       } else {
         showNotification('Fehler: ' + err.type, 'error', 3000);
       }
     });
 
-    peer.on('disconnected', function() {
-      console.warn('⚠️ Host-Peer getrennt');
-      showNotification('⚠️ Verbindung unterbrochen', 'error', 3000);
-    });
-
   } else {
-    // SPIELER: Erstelle Peer und verbinde zum Host
     console.log('👤 Erstelle Spieler-Peer...');
     showNotification('Verbinde zur Lobby...', 'info', 2000);
 
@@ -112,26 +218,13 @@ function initPeerConnection() {
 
     peer.on('open', function(id) {
       console.log('✅ Spieler-Peer erstellt mit ID:', id);
-      console.log('🔗 Versuche Verbindung zum Host:', lobbyCode);
-
-      // Warte kurz, dann verbinde zum Host
-      setTimeout(() => {
-        connectToHost();
-      }, 1000);
+      setTimeout(() => connectToHost(), 1000);
     });
 
     peer.on('error', function(err) {
       console.error('❌ Spieler Peer Fehler:', err);
       showNotification('❌ Verbindung fehlgeschlagen: ' + err.type, 'error', 4000);
-
-      setTimeout(() => {
-        window.location.href = 'index.html';
-      }, 4000);
-    });
-
-    peer.on('disconnected', function() {
-      console.warn('⚠️ Spieler-Peer getrennt');
-      showNotification('⚠️ Verbindung unterbrochen', 'error', 3000);
+      setTimeout(() => window.location.href = 'index.html', 4000);
     });
   }
 }
@@ -146,7 +239,6 @@ function handleNewConnection(conn) {
   conn.on('open', function() {
     console.log('✅ Spieler verbunden:', conn.peer);
 
-    // Sende Host-Info an Spieler
     conn.send({
       type: 'host-info',
       host: {
@@ -156,7 +248,6 @@ function handleNewConnection(conn) {
       }
     });
 
-    // Sende aktuelle Spielerliste
     conn.send({
       type: 'player-list',
       players: players
@@ -167,17 +258,13 @@ function handleNewConnection(conn) {
     console.log('📥 Daten vom Spieler empfangen:', data);
 
     if (data.type === 'join') {
-      // Spieler möchte beitreten
       const player = data.player;
       player.id = conn.peer;
 
-      // Füge Spieler zur Liste hinzu
       if (!players.find(p => p.id === player.id)) {
         players.push(player);
         addPlayerToDOM(player);
         showNotification(player.name + ' ist beigetreten! 🎉', 'success', 2000);
-
-        // Informiere alle anderen Spieler
         broadcastPlayerList();
       }
     }
@@ -188,10 +275,6 @@ function handleNewConnection(conn) {
     removePlayer(conn.peer);
     connections = connections.filter(c => c !== conn);
   });
-
-  conn.on('error', function(err) {
-    console.error('❌ Verbindungsfehler mit Spieler:', err);
-  });
 }
 
 // ========================================
@@ -200,84 +283,57 @@ function handleNewConnection(conn) {
 function connectToHost() {
   console.log('🔗 Starte Verbindung zum Host mit Code:', lobbyCode);
 
-  try {
-    const conn = peer.connect(lobbyCode, {
-      reliable: true,
-      serialization: 'json'
-    });
+  const conn = peer.connect(lobbyCode, {
+    reliable: true,
+    serialization: 'json'
+  });
 
-    if (!conn) {
-      console.error('❌ Konnte Verbindung nicht erstellen');
-      showNotification('❌ Lobby nicht gefunden!', 'error', 4000);
-      setTimeout(() => window.location.href = 'index.html', 4000);
-      return;
-    }
-
-    connections.push(conn);
-
-    // Timeout wenn Verbindung zu lange dauert
-    const connectionTimeout = setTimeout(() => {
-      if (!conn.open) {
-        console.error('❌ Verbindungs-Timeout');
-        showNotification('❌ Lobby nicht gefunden! Timeout.', 'error', 4000);
-        setTimeout(() => window.location.href = 'index.html', 4000);
-      }
-    }, 10000); // 10 Sekunden Timeout
-
-    conn.on('open', function() {
-      clearTimeout(connectionTimeout);
-      console.log('✅ Mit Host verbunden!');
-      showNotification('✅ Verbunden!', 'success', 2000);
-
-      // Sende Join-Request
-      const joinData = {
-        type: 'join',
-        player: {
-          id: peer.id,
-          name: currentUser.global_name || currentUser.username,
-          avatar: getUserAvatar(currentUser),
-          score: 0
-        }
-      };
-
-      console.log('📤 Sende Join-Request:', joinData);
-      conn.send(joinData);
-    });
-
-    conn.on('data', function(data) {
-      console.log('📥 Daten vom Host:', data);
-
-      if (data.type === 'host-info') {
-        // Zeige Host-Info
-        displayHostInfo(data.host);
-      } else if (data.type === 'player-list') {
-        // Aktualisiere Spielerliste
-        updatePlayerList(data.players);
-      } else if (data.type === 'start-quiz') {
-        // Quiz wird gestartet
-        startQuiz();
-      }
-    });
-
-    conn.on('close', function() {
-      clearTimeout(connectionTimeout);
-      console.log('❌ Verbindung zum Host verloren');
-      showNotification('❌ Verbindung zum Host verloren', 'error', 3000);
-      setTimeout(() => window.location.href = 'index.html', 3000);
-    });
-
-    conn.on('error', function(err) {
-      clearTimeout(connectionTimeout);
-      console.error('❌ Verbindungsfehler:', err);
-      showNotification('❌ Lobby nicht gefunden! Code falsch?', 'error', 4000);
-      setTimeout(() => window.location.href = 'index.html', 4000);
-    });
-
-  } catch (error) {
-    console.error('❌ Fehler beim Verbinden:', error);
-    showNotification('❌ Verbindungsfehler!', 'error', 4000);
+  if (!conn) {
+    showNotification('❌ Lobby nicht gefunden!', 'error', 4000);
     setTimeout(() => window.location.href = 'index.html', 4000);
+    return;
   }
+
+  connections.push(conn);
+
+  const connectionTimeout = setTimeout(() => {
+    if (!conn.open) {
+      showNotification('❌ Lobby nicht gefunden! Timeout.', 'error', 4000);
+      setTimeout(() => window.location.href = 'index.html', 4000);
+    }
+  }, 10000);
+
+  conn.on('open', function() {
+    clearTimeout(connectionTimeout);
+    console.log('✅ Mit Host verbunden!');
+    showNotification('✅ Verbunden!', 'success', 2000);
+
+    conn.send({
+      type: 'join',
+      player: {
+        id: peer.id,
+        name: currentUser.global_name || currentUser.username,
+        avatar: getUserAvatar(currentUser),
+        score: 0
+      }
+    });
+  });
+
+  conn.on('data', function(data) {
+    if (data.type === 'host-info') {
+      displayHostInfo(data.host);
+    } else if (data.type === 'player-list') {
+      updatePlayerList(data.players);
+    } else if (data.type === 'start-quiz') {
+      startQuiz();
+    }
+  });
+
+  conn.on('close', function() {
+    clearTimeout(connectionTimeout);
+    showNotification('❌ Verbindung zum Host verloren', 'error', 3000);
+    setTimeout(() => window.location.href = 'index.html', 3000);
+  });
 }
 
 // ========================================
@@ -289,12 +345,8 @@ function broadcastPlayerList() {
     players: players
   };
 
-  console.log('📡 Broadcast Spielerliste an', connections.length, 'Spieler');
-
   connections.forEach(conn => {
-    if (conn.open) {
-      conn.send(message);
-    }
+    if (conn.open) conn.send(message);
   });
 }
 
@@ -324,7 +376,7 @@ function updatePlayerList(newPlayers) {
 }
 
 // ========================================
-// SPIELER ZUM DOM HINZUFÜGEN
+// SPIELER ZUM DOM HINZUFÜGEN - VERBESSERT
 // ========================================
 function addPlayerToDOM(player) {
   const container = document.getElementById('players-container');
@@ -337,6 +389,12 @@ function addPlayerToDOM(player) {
     <span class="player-score">${player.score} Punkte</span>
   `;
   container.appendChild(card);
+
+  // Extrahiere und wende Farbe an
+  extractDominantColor(player.avatar, (color) => {
+    applyPlayerColor(card, color);
+  });
+
   console.log('➕ Spieler zur DOM hinzugefügt:', player.name);
 }
 
@@ -349,7 +407,6 @@ function loadCurrentUser() {
     currentUser = JSON.parse(storedUser);
     console.log('👤 User geladen:', currentUser.username);
   } else {
-    // Fallback für Test ohne Discord
     currentUser = {
       id: 'user_' + Date.now(),
       username: 'TestUser',
@@ -357,7 +414,6 @@ function loadCurrentUser() {
       discriminator: '0000',
       avatar: null
     };
-    console.log('👤 Fallback User erstellt');
   }
 }
 
@@ -369,13 +425,9 @@ function displayHostInfo(hostData) {
   const hostName = document.getElementById('host-name');
 
   if (hostData) {
-    // Spieler: Zeige Host-Daten vom Server
-    console.log('👑 Zeige Host-Info:', hostData.name);
     hostAvatar.src = hostData.avatar;
     hostName.textContent = hostData.name;
   } else if (currentUser) {
-    // Host: Zeige eigene Daten
-    console.log('👑 Zeige eigene Host-Info');
     hostAvatar.src = getUserAvatar(currentUser);
     hostName.textContent = currentUser.global_name || currentUser.username;
   }
@@ -401,9 +453,7 @@ function initUI() {
   const lobbyCodeContainer = document.getElementById('lobby-code-container');
   const hostControls = document.getElementById('host-controls');
 
-  if (lobbyCodeDisplay) {
-    lobbyCodeDisplay.textContent = lobbyCode;
-  }
+  if (lobbyCodeDisplay) lobbyCodeDisplay.textContent = lobbyCode;
 
   if (isHost) {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
@@ -421,26 +471,18 @@ function setupEventListeners() {
   const startBtn = document.getElementById('start-quiz-btn');
   if (startBtn && isHost) {
     startBtn.addEventListener('click', function() {
-      console.log('🎮 Quiz wird gestartet...');
-      // Sende Start-Signal an alle Spieler
       connections.forEach(conn => {
-        if (conn.open) {
-          conn.send({ type: 'start-quiz' });
-        }
+        if (conn.open) conn.send({ type: 'start-quiz' });
       });
       startQuiz();
     });
   }
 
   const fullscreenBtn = document.getElementById('fullscreen-btn');
-  if (fullscreenBtn) {
-    fullscreenBtn.addEventListener('click', toggleFullscreen);
-  }
+  if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
 
   const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
-  if (leaveLobbyBtn) {
-    leaveLobbyBtn.addEventListener('click', leaveLobby);
-  }
+  if (leaveLobbyBtn) leaveLobbyBtn.addEventListener('click', leaveLobby);
 }
 
 // ========================================
@@ -449,16 +491,11 @@ function setupEventListeners() {
 function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
-  console.log('🚪 Verlasse Lobby...');
-
-  // Schließe alle Verbindungen
   connections.forEach(conn => {
     if (conn.open) conn.close();
   });
 
-  if (peer) {
-    peer.destroy();
-  }
+  if (peer) peer.destroy();
 
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
@@ -473,9 +510,6 @@ function leaveLobby() {
 function startQuiz() {
   showNotification('Quiz startet! 🎮', 'success', 2000);
   console.log('🎮 Quiz gestartet mit', (players.length + 1), 'Spielern');
-  setTimeout(() => {
-    alert('Quiz startet!\n\nSpieler: ' + (players.length + 1) + '\n\n(Quiz-Funktionalität wird noch implementiert)');
-  }, 1000);
 }
 
 // ========================================
@@ -530,9 +564,7 @@ function showNotification(message, type = 'info', duration = 2000) {
   }, duration);
 }
 
-// ========================================
 // CSS ANIMATION
-// ========================================
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
@@ -542,5 +574,5 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-console.log('✅ P2P Lobby System mit Debug-Modus geladen!');
+console.log('✅ P2P Lobby System mit Farbextraktion geladen!');
 
