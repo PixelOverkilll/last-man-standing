@@ -572,24 +572,30 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
   document.getElementById('debug-bot-status').textContent = '✅ Verbunden';
   document.getElementById('debug-bot-status').style.color = '#10b981';
 
-  // Update Host wenn er spricht
-  const hostState = voiceStates.find(state => state.userId === currentUserId);
-  console.log('🔍 Host State gefunden:', hostState);
+  // Find current user's state (could be host OR player)
+  const myState = voiceStates.find(state => state.userId === currentUserId);
 
-  if (hostState) {
-    console.log('✅ Host im Voice:', hostState);
+  if (myState) {
+    console.log('✅ Ich bin im Voice:', myState);
 
     // Update Debug Info
     document.getElementById('debug-in-voice').textContent = '✅ Ja';
     document.getElementById('debug-in-voice').style.color = '#10b981';
-    document.getElementById('debug-muted').textContent = hostState.muted ? '🔇 Ja' : '🎤 Nein';
-    document.getElementById('debug-muted').style.color = hostState.muted ? '#ef4444' : '#10b981';
-    document.getElementById('debug-speaking').textContent = hostState.speaking ? '🟢 Ja' : '⚪ Nein';
-    document.getElementById('debug-speaking').style.color = hostState.speaking ? '#10b981' : '#ef4444';
+    document.getElementById('debug-muted').textContent = myState.muted ? '🔇 Ja' : '🎤 Nein';
+    document.getElementById('debug-muted').style.color = myState.muted ? '#ef4444' : '#10b981';
+    document.getElementById('debug-speaking').textContent = myState.speaking ? '🟢 Ja' : '⚪ Nein';
+    document.getElementById('debug-speaking').style.color = myState.speaking ? '#10b981' : '#ef4444';
 
-    updateHostVoiceStatus(hostState.speaking);
+    // Update visual indicator based on role
+    const isHost = localStorage.getItem('isHost') === 'true';
+    if (isHost) {
+      updateHostVoiceStatus(myState.speaking);
+    } else {
+      // Update player's own card in the players list
+      updatePlayerVoiceStatus(currentUserId, true, myState.speaking);
+    }
   } else {
-    console.log('❌ Host nicht im Voice gefunden');
+    console.log('❌ Ich bin nicht im Voice gefunden');
 
     // Update Debug Info
     document.getElementById('debug-in-voice').textContent = '❌ Nein';
@@ -599,10 +605,13 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
     document.getElementById('debug-speaking').textContent = '❌ Nein';
     document.getElementById('debug-speaking').style.color = '#ef4444';
 
-    updateHostVoiceStatus(false);
+    const isHost = localStorage.getItem('isHost') === 'true';
+    if (isHost) {
+      updateHostVoiceStatus(false);
+    }
   }
 
-  // Update alle Spieler
+  // Update ALL other players in the list
   players.forEach(player => {
     const playerState = voiceStates.find(state => state.userId === player.id);
     if (playerState) {
