@@ -145,6 +145,40 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 // API Endpoints
 
+// Get all users in the gamenight voice channel with full profile data
+app.get('/api/gamenight-users', async (req, res) => {
+  try {
+    const users = [];
+    const guilds = client.guilds.cache;
+
+    for (const [guildId, guild] of guilds) {
+      const channel = guild.channels.cache.get(GAMENIGHT_CHANNEL_ID);
+      if (channel && channel.isVoiceBased()) {
+        for (const [memberId, member] of channel.members) {
+          const voiceState = member.voice;
+          const isSpeaking = !voiceState.selfMute && !voiceState.serverMute;
+
+          users.push({
+            id: member.user.id,
+            username: member.user.username,
+            discriminator: member.user.discriminator,
+            avatar: member.user.avatar,
+            global_name: member.user.globalName || member.user.username,
+            inVoice: true,
+            speaking: isSpeaking,
+            muted: voiceState.selfMute || voiceState.serverMute
+          });
+        }
+      }
+    }
+
+    res.json(users);
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Gamenight-User:', error);
+    res.status(500).json({ error: 'Fehler beim Laden der User' });
+  }
+});
+
 // Get all users in voice
 app.get('/api/voice-states', (req, res) => {
   const states = Array.from(voiceStates.entries()).map(([userId, state]) => ({
@@ -191,7 +225,7 @@ app.get('/api/speaking/:userId', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    botOnline: client.user ? true : false,
+    botOnline: !!client.user,
     usersInVoice: voiceStates.size
   });
 });

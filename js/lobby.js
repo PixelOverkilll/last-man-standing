@@ -74,9 +74,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function loadHostInfo() {
   const storedUser = localStorage.getItem('discordUser');
-  const lobbyCode = localStorage.getItem('lobbyCode') || 'ABC123';
+  const currentLobbyCode = localStorage.getItem('lobbyCode') || 'ABC123';
+  const isCurrentUserHost = localStorage.getItem('isHost') === 'true';
 
-  if (storedUser) {
+  // If user is host, show their own info
+  if (isCurrentUserHost && storedUser) {
     const user = JSON.parse(storedUser);
     const hostAvatar = document.getElementById('host-avatar');
     const hostName = document.getElementById('host-name');
@@ -105,18 +107,19 @@ function loadHostInfo() {
 
     hostName.textContent = user.global_name || user.username;
   } else {
-    // Use test host - use a placeholder with specific color for testing
-    const testAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=TestHost&backgroundColor=b6e3f4';
+    // If user is NOT host, show placeholder
+    // TODO: In future, fetch host info from server
+    const testAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Host&backgroundColor=b6e3f4';
     document.getElementById('host-avatar').src = testAvatar;
-    document.getElementById('host-name').textContent = 'TestHost';
+    document.getElementById('host-name').textContent = 'Host';
 
     // For test mode, apply default purple color
-    console.log('Test-Modus: Verwende Standard-Lila-Farbe');
+    console.log('Kein Host - verwende Platzhalter');
     applyHostThemeColor('rgb(124, 58, 237)'); // Default purple
   }
 
   // Set lobby code
-  document.getElementById('lobby-code-display').textContent = lobbyCode;
+  document.getElementById('lobby-code-display').textContent = currentLobbyCode;
 }
 
 // Extract dominant color from image
@@ -875,6 +878,74 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+
+// Load players from voice channel (if host)
+async function loadPlayersFromVoiceChannel() {
+  console.log('🎮 Lade alle Spieler aus dem Voice-Channel...');
+
+  try {
+    const apiUrl = CONFIG.getGamenightUsersUrl();
+    console.log('🔄 Fetching gamenight users from:', apiUrl);
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      console.error('❌ Bot API nicht erreichbar - Status:', response.status);
+      return;
+    }
+
+    const voiceUsers = await response.json();
+    console.log('✅ Voice-Channel User geladen:', voiceUsers);
+
+    // Get current user (host) ID
+    const storedUser = localStorage.getItem('discordUser');
+    const currentUser = storedUser ? JSON.parse(storedUser) : null;
+    const currentUserId = currentUser ? currentUser.id : null;
+
+    // Add each voice user as player (except host)
+    voiceUsers.forEach(voiceUser => {
+      // Skip host
+      if (currentUserId && voiceUser.id === currentUserId) {
+        console.log('⏭️ Host übersprungen:', voiceUser.username);
+        return;
+      }
+
+      // Check if player already exists
+      const existingPlayer = players.find(p => p.id === voiceUser.id);
+      if (existingPlayer) {
+        console.log('⏭️ Spieler bereits in Liste:', voiceUser.username);
+        return;
+      }
+
+      // Create avatar URL
+      const avatarUrl = voiceUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${voiceUser.id}/${voiceUser.avatar}.png?size=128`
+        : `https://cdn.discordapp.com/embed/avatars/${parseInt(voiceUser.discriminator || '0') % 5}.png`;
+
+      // Create player object
+      const newPlayer = {
+        id: voiceUser.id,
+        name: voiceUser.global_name || voiceUser.username,
+        avatar: avatarUrl,
+        score: 0,
+        inVoice: true
+      };
+
+      addPlayer(newPlayer);
+      console.log('✅ Spieler hinzugefügt:', newPlayer.name);
+    });
+
+    // Show success message
+    if (voiceUsers.length > 0) {
+      console.log(`🎉 ${voiceUsers.length} Spieler aus dem Voice-Channel geladen!`);
+    } else {
+      console.log('ℹ️ Keine Spieler im Voice-Channel gefunden');
+    }
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Voice-Channel User:', error);
+  }
+}
 
 // Add current user as player (if not host)
 function addCurrentUserAsPlayer() {

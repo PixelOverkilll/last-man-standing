@@ -28,7 +28,8 @@ const CONFIG = {
     },
 
     ENDPOINTS: {
-      voiceStates: '/api/voice-states'
+      voiceStates: '/api/voice-states',
+      gamenightUsers: '/api/gamenight-users'
     }
   },
 
@@ -51,6 +52,11 @@ const CONFIG = {
   // Get Voice States API URL
   getVoiceStatesUrl() {
     return `${this.getBotApiUrl()}${this.BOT_API.ENDPOINTS.voiceStates}`;
+  },
+
+  // Get Gamenight Users API URL
+  getGamenightUsersUrl() {
+    return `${this.getBotApiUrl()}${this.BOT_API.ENDPOINTS.gamenightUsers}`;
   }
 };
 
