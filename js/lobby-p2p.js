@@ -1,5 +1,5 @@
 // ========================================
-// LOBBY MIT PEER-TO-PEER HOSTING - ULTRASCHNELL
+// LOBBY MIT PEER-TO-PEER HOSTING
 // ========================================
 
 console.log('🎮 P2P Lobby lädt...');
@@ -24,42 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
   console.log('🔍 Lobby Code:', lobbyCode);
   console.log('🔍 Ist Host:', isHost);
+  console.log('🔍 localStorage isHost:', localStorage.getItem('isHost'));
 
   initUI();
   setupEventListeners();
-
-  // Starte Peer-Verbindung SOFORT ohne Verzögerung
   initPeerConnection();
 });
 
 // ========================================
-// PEER-TO-PEER VERBINDUNG - ULTRASCHNELL & MINIMAL
+// PEER-TO-PEER VERBINDUNG INITIALISIEREN
 // ========================================
 function initPeerConnection() {
   console.log('🌐 Initialisiere Peer-Verbindung...');
 
-  // MINIMAL-Konfiguration für maximale Geschwindigkeit
-  const peerConfig = {
-    debug: 0,
-    config: {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' }
-      ],
-      iceTransportPolicy: 'all',
-      iceCandidatePoolSize: 5
-    }
-  };
-
   if (isHost) {
     console.log('🏠 Starte als HOST');
-    showNotification('Erstelle Lobby...', 'info', 1000);
-
-    peer = new Peer(lobbyCode, peerConfig);
+    peer = new Peer(lobbyCode);
 
     peer.on('open', function(id) {
       console.log('✅ Host-Lobby erstellt mit ID:', id);
-      showNotification('✅ Lobby bereit!', 'success', 1500);
+      showNotification('Lobby erstellt! Teile den Code: ' + lobbyCode, 'success');
     });
 
     peer.on('connection', function(conn) {
@@ -69,20 +53,12 @@ function initPeerConnection() {
 
     peer.on('error', function(err) {
       console.error('❌ Peer Fehler:', err);
-      showNotification('Fehler: ' + err.type, 'error', 3000);
-      if (err.type === 'unavailable-id') {
-        setTimeout(() => {
-          localStorage.removeItem('lobbyCode');
-          window.location.href = 'index.html';
-        }, 3000);
-      }
+      showNotification('Lobby-Fehler: ' + err.type, 'error');
     });
 
   } else {
     console.log('👤 Starte als SPIELER');
-    showNotification('Verbinde...', 'info', 1000);
-
-    peer = new Peer(peerConfig);
+    peer = new Peer();
 
     peer.on('open', function(id) {
       console.log('✅ Spieler-Peer erstellt mit ID:', id);
@@ -91,14 +67,13 @@ function initPeerConnection() {
 
     peer.on('error', function(err) {
       console.error('❌ Peer Fehler:', err);
-      showNotification('Verbindung fehlgeschlagen', 'error', 3000);
-      setTimeout(() => window.location.href = 'index.html', 3000);
+      showNotification('Verbindung fehlgeschlagen', 'error');
     });
   }
 }
 
 // ========================================
-// HOST: NEUE VERBINDUNG
+// HOST: NEUE VERBINDUNG VERWALTEN
 // ========================================
 function handleNewConnection(conn) {
   connections.push(conn);
@@ -106,77 +81,68 @@ function handleNewConnection(conn) {
   conn.on('open', function() {
     console.log('✅ Spieler verbunden:', conn.peer);
 
+    // Sende Host-Info
     const storedUser = localStorage.getItem('discordUser');
     if (storedUser) {
       const user = JSON.parse(storedUser);
+      const hostData = {
+        name: user.global_name || user.username,
+        avatar: user.avatar
+          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+          : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`
+      };
+
       conn.send({
         type: 'host-info',
-        host: {
-          name: user.global_name || user.username,
-          avatar: user.avatar
-            ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-            : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`
-        }
+        host: hostData
       });
+
+      console.log('📤 HOST: Sende Host-Info an Spieler:', hostData.name);
     }
 
+    // Sende Spielerliste
     conn.send({
       type: 'player-list',
       players: players
     });
+
+    console.log('📤 HOST: Sende Spielerliste an Spieler:', players.length, 'Spieler');
   });
 
   conn.on('data', function(data) {
+    console.log('📨 HOST: Daten empfangen:', data);
+
     if (data.type === 'join') {
+      console.log('➕ HOST: Füge Spieler hinzu:', data.player.name);
       addNewPlayer(data.player, conn.peer);
       broadcastPlayerList();
     }
   });
 
   conn.on('close', function() {
-    console.log('👋 Spieler getrennt:', conn.peer);
+    console.log('👋 HOST: Spieler getrennt:', conn.peer);
     removePlayer(conn.peer);
     broadcastPlayerList();
-    connections = connections.filter(c => c !== conn);
-  });
-
-  conn.on('error', function(err) {
-    console.error('❌ Connection Error:', err);
   });
 }
 
 // ========================================
-// SPIELER: ZUM HOST VERBINDEN - ULTRASCHNELL
+// SPIELER: ZUM HOST VERBINDEN
 // ========================================
 function connectToHost() {
-  console.log('🔗 Verbinde zum Host...');
+  console.log('🔗 SPIELER: Verbinde zum Host mit Code:', lobbyCode);
 
-  const conn = peer.connect(lobbyCode, {
-    reliable: true,
-    serialization: 'json'
-  });
-
-  let connected = false;
-
-  // Timeout nur 8 Sekunden
-  const timeout = setTimeout(() => {
-    if (!connected) {
-      console.error('❌ Verbindungstimeout');
-      showNotification('❌ Lobby nicht gefunden', 'error', 2000);
-      setTimeout(() => window.location.href = 'index.html', 2000);
-    }
-  }, 8000);
+  const conn = peer.connect(lobbyCode);
 
   conn.on('open', function() {
-    connected = true;
-    clearTimeout(timeout);
-    console.log('✅ Mit Host verbunden!');
-    showNotification('✅ Verbunden!', 'success', 1000);
+    console.log('✅ SPIELER: Mit Host verbunden!');
+    showNotification('Mit Lobby verbunden!', 'success');
 
+    // Sende eigene Info an Host
     const storedUser = localStorage.getItem('discordUser');
     if (storedUser) {
       const user = JSON.parse(storedUser);
-      conn.send({
+      const playerData = {
         type: 'join',
         player: {
           id: peer.id,
@@ -186,89 +152,120 @@ function connectToHost() {
             : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`,
           score: 0
         }
-      });
+      };
+
+      conn.send(playerData);
+      console.log('📤 SPIELER: Sende meine Info an Host:', playerData.player.name);
     }
   });
 
   conn.on('data', function(data) {
+    console.log('📨 SPIELER: Daten vom Host empfangen:', data.type);
+
     if (data.type === 'host-info') {
+      console.log('🏠 SPIELER: Empfange Host-Info:', data.host.name);
       hostInfo = data.host;
       displayHostInfo(hostInfo);
     } else if (data.type === 'player-list') {
+      console.log('👥 SPIELER: Empfange Spielerliste:', data.players.length, 'Spieler');
       updatePlayerList(data.players);
     } else if (data.type === 'start-quiz') {
+      console.log('🎮 SPIELER: Quiz startet!');
       startQuiz();
     }
   });
 
   conn.on('error', function(err) {
-    clearTimeout(timeout);
-    console.error('❌ Verbindungsfehler:', err);
-    showNotification('❌ Lobby nicht gefunden', 'error', 2000);
-    setTimeout(() => window.location.href = 'index.html', 2000);
+    console.error('❌ SPIELER: Verbindungsfehler:', err);
+    showNotification('Lobby-Code ungültig oder Host offline', 'error');
   });
 
   connections.push(conn);
 }
 
 // ========================================
-// HOST INFO ANZEIGEN
+// HOST INFO ANZEIGEN (NUR FÜR SPIELER!)
 // ========================================
 function displayHostInfo(host) {
+  console.log('🎨 SPIELER: Zeige Host Info an:', host.name);
+
   const hostAvatar = document.getElementById('host-avatar');
   const hostName = document.getElementById('host-name');
+
   hostAvatar.src = host.avatar;
   hostName.textContent = host.name;
+
+  console.log('✅ SPIELER: Host-Avatar gesetzt:', host.avatar.substring(0, 50) + '...');
+  console.log('✅ SPIELER: Host-Name gesetzt:', host.name);
 }
 
 // ========================================
-// SPIELER HINZUFÜGEN
+// NEUEN SPIELER HINZUFÜGEN (NUR HOST!)
 // ========================================
 function addNewPlayer(player, peerId) {
-  if (players.find(p => p.id === peerId)) return;
+  if (players.find(p => p.id === peerId)) {
+    console.log('⚠️ HOST: Spieler bereits vorhanden');
+    return;
+  }
 
   player.id = peerId;
   players.push(player);
   addPlayerToDOM(player);
-  showNotification(player.name + ' ist beigetreten! 🎉', 'success', 1500);
+
+  console.log('✅ HOST: Spieler hinzugefügt:', player.name, '(Gesamt:', players.length, ')');
+  showNotification(player.name + ' ist beigetreten! 🎉', 'success');
 }
 
 // ========================================
-// SPIELERLISTE AKTUALISIEREN
+// SPIELERLISTE AKTUALISIEREN (NUR SPIELER!)
 // ========================================
 function updatePlayerList(newPlayers) {
+  console.log('👥 SPIELER: Aktualisiere Spielerliste:', newPlayers.length, 'Spieler');
+
   players = newPlayers;
+
   const playersContainer = document.getElementById('players-container');
   playersContainer.innerHTML = '';
-  players.forEach(player => addPlayerToDOM(player));
+
+  players.forEach(player => {
+    console.log('  ➕ Zeige Spieler:', player.name);
+    addPlayerToDOM(player);
+  });
+
+  console.log('✅ SPIELER: Spielerliste aktualisiert');
 }
 
 // ========================================
-// SPIELERLISTE BROADCASTEN
+// SPIELERLISTE BROADCASTEN (NUR HOST!)
 // ========================================
 function broadcastPlayerList() {
-  const message = { type: 'player-list', players: players };
+  const message = {
+    type: 'player-list',
+    players: players
+  };
+
   connections.forEach(conn => {
     if (conn.open) {
-      try {
-        conn.send(message);
-      } catch (err) {
-        console.error('❌ Fehler beim Senden:', err);
-      }
+      conn.send(message);
     }
   });
+
+  console.log('📡 HOST: Spielerliste gebroadcastet an', connections.length, 'Spieler');
 }
 
 // ========================================
-// SPIELER ENTFERNEN
+// SPIELER ENTFERNEN (NUR HOST!)
 // ========================================
 function removePlayer(peerId) {
   const player = players.find(p => p.id === peerId);
   if (player) {
     players = players.filter(p => p.id !== peerId);
+
     const playerCard = document.getElementById(`player-${peerId}`);
     if (playerCard) playerCard.remove();
-    showNotification(player.name + ' hat verlassen', 'info', 1500);
+
+    console.log('👋 HOST: Spieler entfernt:', player.name);
+    showNotification(player.name + ' hat die Lobby verlassen', 'info');
   }
 }
 
@@ -277,30 +274,41 @@ function removePlayer(peerId) {
 // ========================================
 function addPlayerToDOM(player) {
   const playersContainer = document.getElementById('players-container');
+
   const playerCard = document.createElement('div');
   playerCard.className = 'player-card';
   playerCard.id = `player-${player.id}`;
+
   playerCard.innerHTML = `
     <img src="${player.avatar}" alt="${player.name}" class="player-avatar">
     <span class="player-name">${player.name}</span>
     <span class="player-score">${player.score} Punkte</span>
   `;
+
   playersContainer.appendChild(playerCard);
+  console.log('✅ Spieler-Karte hinzugefügt:', player.name);
 }
 
 // ========================================
 // UI INITIALISIERUNG
 // ========================================
 function initUI() {
+  console.log('🎨 Initialisiere UI...');
+  console.log('  🔍 isHost:', isHost, '(Typ:', typeof isHost, ')');
+  console.log('  🔍 lobbyCode:', lobbyCode);
+
   document.getElementById('lobby-code-display').textContent = lobbyCode;
+
   const lobbyCodeContainer = document.getElementById('lobby-code-container');
   const hostControls = document.getElementById('host-controls');
 
   if (isHost) {
+    console.log('🏠 UI: HOST-MODUS aktiviert');
     lobbyCodeContainer.style.display = 'flex';
     hostControls.style.display = 'block';
     loadHostInfoForHost();
   } else {
+    console.log('👤 UI: SPIELER-MODUS aktiviert');
     lobbyCodeContainer.style.display = 'none';
     hostControls.style.display = 'none';
     setPlaceholderHost();
@@ -308,11 +316,14 @@ function initUI() {
 }
 
 // ========================================
-// HOST INFO LADEN
+// HOST INFO LADEN (NUR FÜR HOST!)
 // ========================================
 function loadHostInfoForHost() {
+  console.log('🏠 HOST: Lade meine eigenen Infos...');
+
   const storedUser = localStorage.getItem('discordUser');
   if (!storedUser) {
+    console.warn('⚠️ HOST: Kein User im localStorage');
     setPlaceholderHost();
     return;
   }
@@ -329,21 +340,31 @@ function loadHostInfoForHost() {
     }
 
     hostName.textContent = user.global_name || user.username;
+    console.log('✅ HOST: Meine Infos angezeigt:', hostName.textContent);
+
   } catch (error) {
+    console.error('❌ HOST: Fehler beim Laden:', error);
     setPlaceholderHost();
   }
 }
 
+// ========================================
+// PLATZHALTER HOST
+// ========================================
 function setPlaceholderHost() {
+  console.log('⏳ Setze Placeholder (warte auf Host-Info)...');
   document.getElementById('host-avatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Host';
   document.getElementById('host-name').textContent = 'Verbinde...';
 }
 
 // ========================================
-// BENACHRICHTIGUNG - SCHNELLER
+// BENACHRICHTIGUNG ANZEIGEN
 // ========================================
-function showNotification(message, type = 'info', duration = 2000) {
+function showNotification(message, type = 'info') {
+  console.log('🔔', message);
+
   const notification = document.createElement('div');
+  notification.className = 'notification';
   notification.textContent = message;
 
   const colors = {
@@ -358,14 +379,13 @@ function showNotification(message, type = 'info', duration = 2000) {
     right: 20px;
     background: ${colors[type]};
     color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
+    padding: 15px 25px;
+    border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
     z-index: 200;
     font-weight: 600;
-    font-size: 0.9rem;
-    animation: slideIn 0.2s ease-out;
-    max-width: 250px;
+    animation: slideIn 0.3s ease-out;
+    max-width: 300px;
   `;
 
   document.body.appendChild(notification);
@@ -373,27 +393,28 @@ function showNotification(message, type = 'info', duration = 2000) {
   setTimeout(() => {
     notification.style.opacity = '0';
     notification.style.transform = 'translateX(400px)';
-    notification.style.transition = 'all 0.2s ease-out';
-    setTimeout(() => notification.remove(), 200);
-  }, duration);
+    notification.style.transition = 'all 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
 }
 
 // ========================================
 // EVENT LISTENERS
 // ========================================
 function setupEventListeners() {
+  console.log('👂 Setup Event Listeners...');
+
   const startBtn = document.getElementById('start-quiz-btn');
   if (startBtn && isHost) {
     startBtn.addEventListener('click', function() {
+      console.log('🎮 HOST: Starte Quiz...');
+
       connections.forEach(conn => {
         if (conn.open) {
-          try {
-            conn.send({ type: 'start-quiz' });
-          } catch (err) {
-            console.error('❌ Fehler beim Senden:', err);
-          }
+          conn.send({ type: 'start-quiz' });
         }
       });
+
       startQuiz();
     });
   }
@@ -403,6 +424,7 @@ function setupEventListeners() {
     fullscreenBtn.addEventListener('click', toggleFullscreen);
   }
 
+  // Leave Lobby Button
   const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
   if (leaveLobbyBtn) {
     leaveLobbyBtn.addEventListener('click', leaveLobby);
@@ -413,36 +435,62 @@ function setupEventListeners() {
 // LOBBY VERLASSEN
 // ========================================
 function leaveLobby() {
-  if (!confirm('Lobby wirklich verlassen?')) return;
+  console.log('🚪 Verlasse Lobby...');
 
+  // Bestätigungsdialog
+  const confirmLeave = confirm('Möchtest du die Lobby wirklich verlassen?');
+
+  if (!confirmLeave) {
+    console.log('❌ Abbruch - bleibe in Lobby');
+    return;
+  }
+
+  console.log('✅ Verlasse Lobby bestätigt');
+
+  // Schließe alle Peer-Verbindungen
   if (peer) {
     connections.forEach(conn => {
       if (conn.open) {
-        try {
-          conn.close();
-        } catch (err) {
-          console.error('❌ Fehler beim Schließen:', err);
-        }
+        conn.close();
       }
     });
     peer.destroy();
+    console.log('🔌 Peer-Verbindungen geschlossen');
   }
 
+  // Lösche Lobby-Daten
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
 
-  showNotification('Lobby verlassen', 'info', 500);
-  setTimeout(() => window.location.href = 'index.html', 500);
+  // Zeige Benachrichtigung
+  showNotification('Lobby verlassen', 'info');
+
+  // Warte kurz und redirecte zur Startseite
+  setTimeout(() => {
+    window.location.href = 'index.html';
+  }, 500);
 }
 
+// ========================================
+// QUIZ STARTEN
+// ========================================
 function startQuiz() {
-  showNotification('Quiz startet! 🎮', 'success', 2000);
-  setTimeout(() => alert('Quiz-Modus kommt bald!'), 1000);
+  console.log('🎮 Quiz startet jetzt!');
+  showNotification('Quiz startet! 🎮', 'success');
+
+  setTimeout(() => {
+    alert('Quiz-Modus wird bald implementiert!');
+  }, 1000);
 }
 
+// ========================================
+// FULLSCREEN
+// ========================================
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen();
+    document.documentElement.requestFullscreen().catch(err => {
+      console.log('Fullscreen fehlgeschlagen:', err);
+    });
   } else {
     document.exitFullscreen();
   }
@@ -454,11 +502,17 @@ function toggleFullscreen() {
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
-    from { opacity: 0; transform: translateX(300px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+      opacity: 0;
+      transform: translateX(400px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
   }
 `;
 document.head.appendChild(style);
 
-console.log('✅ P2P Lobby geladen!');
+console.log('✅ P2P Lobby-Script geladen!');
 
