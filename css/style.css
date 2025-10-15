@@ -73,7 +73,7 @@ body {
 
 .start-container {
   width: 90%;
-  max-width: 900px;
+  max-width: 700px; /* Reduziert von 900px auf 700px */
   padding: 20px;
 }
 
@@ -81,7 +81,7 @@ body {
   background: rgba(30, 15, 45, 0.98);
   backdrop-filter: blur(15px);
   border-radius: 25px;
-  padding: 60px 50px;
+  padding: 50px 40px; /* Reduziert von 60px 50px */
   box-shadow:
     0 25px 70px rgba(0, 0, 0, 0.7),
     0 0 0 1px rgba(124, 58, 237, 0.3);

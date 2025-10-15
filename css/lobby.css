@@ -301,51 +301,55 @@ body {
   transform: translateY(-2px);
 }
 
-/* Players Area - GRÖSSERE Spieler-Karten (doppelt so groß) */
+/* Players Area - VERBESSERT FÜR VOLLBILD */
 .players-area {
   grid-row: 3;
-  padding: 30px 20px;
+  padding: 20px;
   display: flex;
   justify-content: center;
-  background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+  align-items: flex-end;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
   z-index: 60;
   overflow-x: auto;
   overflow-y: hidden;
+  min-height: 280px;
+  max-height: 35vh; /* Begrenzt Höhe auf 35% des Viewports */
 }
 
 .players-container {
   display: flex;
-  gap: 30px;
+  gap: 25px;
   justify-content: center;
-  align-items: center;
+  align-items: flex-end;
   flex-wrap: wrap;
-  max-width: 1400px;
+  max-width: 1600px;
+  padding-bottom: 10px;
 }
 
 .player-card {
   background: rgba(30, 15, 45, 0.98);
   border: 4px solid #7c3aed;
   border-radius: 22px;
-  padding: 35px 30px;
+  padding: 30px 25px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 15px;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
   transition: all 0.3s ease;
-  min-width: 260px;
-  max-width: 340px;
+  min-width: 220px;
+  max-width: 280px;
   position: relative;
 }
 
 .player-card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-8px);
   box-shadow: 0 20px 50px rgba(124, 58, 237, 0.8);
 }
 
 .player-avatar {
-  width: 150px;
-  height: 150px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   border: 5px solid #7c3aed;
   box-shadow: 0 0 25px rgba(124, 58, 237, 0.8);
@@ -354,7 +358,7 @@ body {
 .player-name {
   color: #e9d5ff;
   font-weight: 800;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   text-align: center;
   word-break: break-word;
   letter-spacing: 0.8px;
@@ -362,10 +366,10 @@ body {
 
 .player-score {
   color: #c4b5fd;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   background: rgba(124, 58, 237, 0.4);
-  padding: 10px 25px;
+  padding: 8px 20px;
   border-radius: 30px;
   border: 3px solid #7c3aed;
 }
