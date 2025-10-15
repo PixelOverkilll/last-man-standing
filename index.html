@@ -50,8 +50,11 @@
 
   <div class="start-container">
     <div class="start-content">
-      <h1 class="game-title">Last Man Standing</h1>
-      <p class="game-subtitle">Das ultimative Quiz-Duell</p>
+      <!-- Header Section -->
+      <div class="header-section">
+        <h1 class="game-title">Last Man Standing</h1>
+        <p class="game-subtitle">Das ultimative Quiz-Duell</p>
+      </div>
 
       <!-- Discord Login Section -->
       <div class="welcome-section" id="login-section">
@@ -72,44 +75,58 @@
 
       <!-- User Info Section (hidden initially) -->
       <div class="welcome-section" id="user-section" style="display: none;">
-        <div class="user-info-card">
-          <div class="user-avatar" id="user-avatar">
-            <img src="" alt="Avatar" id="avatar-img">
+        <!-- User Profile Card -->
+        <div class="user-profile-section">
+          <div class="user-info-card">
+            <div class="user-avatar" id="user-avatar">
+              <img src="" alt="Avatar" id="avatar-img">
+            </div>
+            <div class="user-details">
+              <h2 class="user-name" id="user-name">Username</h2>
+              <p class="user-discriminator" id="user-discriminator">#0000</p>
+            </div>
+            <button class="btn btn-logout" id="logout-btn">
+              <span class="btn-icon">🚪</span>
+              Abmelden
+            </button>
           </div>
-          <h2 class="user-name" id="user-name">Username</h2>
-          <p class="user-discriminator" id="user-discriminator">#0000</p>
-          <button class="btn btn-logout" id="logout-btn">Abmelden</button>
         </div>
 
-        <div class="join-options">
-          <div class="option-card">
-            <h3 class="option-title">Lobby erstellen</h3>
-            <p class="option-description">Erstelle eine neue Lobby und lade Freunde ein</p>
-            <button class="btn btn-primary" id="create-lobby-btn">
-              <span class="btn-icon">➕</span>
-              Neue Lobby
-            </button>
-          </div>
+        <!-- Lobby Actions Section -->
+        <div class="lobby-actions-section">
+          <h3 class="section-title">Spielmodus wählen</h3>
 
-          <div class="divider">
-            <span>oder</span>
-          </div>
-
-          <div class="option-card">
-            <h3 class="option-title">Lobby beitreten</h3>
-            <p class="option-description">Tritt einer bestehenden Lobby bei</p>
-            <div class="input-group">
-              <label for="lobby-code" class="visually-hidden">Lobby-Code</label>
-              <input type="text" id="lobby-code" class="text-input" placeholder="Lobby-Code eingeben..." maxlength="6" aria-label="Lobby-Code eingeben">
+          <div class="join-options">
+            <!-- Create Lobby Card -->
+            <div class="option-card create-card">
+              <div class="card-icon">➕</div>
+              <h3 class="option-title">Lobby erstellen</h3>
+              <p class="option-description">Erstelle eine neue Lobby und lade deine Freunde ein</p>
+              <button class="btn btn-primary" id="create-lobby-btn">
+                <span class="btn-icon">🎮</span>
+                Neue Lobby erstellen
+              </button>
             </div>
-            <button class="btn btn-secondary" id="join-lobby-btn">
-              <span class="btn-icon">🚪</span>
-              Beitreten
-            </button>
+
+            <!-- Join Lobby Card -->
+            <div class="option-card join-card">
+              <div class="card-icon">🚪</div>
+              <h3 class="option-title">Lobby beitreten</h3>
+              <p class="option-description">Tritt einer bestehenden Lobby mit einem Code bei</p>
+              <div class="input-group">
+                <label for="lobby-code" class="visually-hidden">Lobby-Code</label>
+                <input type="text" id="lobby-code" class="text-input" placeholder="LOBBY-CODE" maxlength="6" aria-label="Lobby-Code eingeben">
+              </div>
+              <button class="btn btn-secondary" id="join-lobby-btn">
+                <span class="btn-icon">▶</span>
+                Lobby beitreten
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Game Features -->
       <div class="game-features">
         <div class="feature">
           <span class="feature-icon">🎯</span>
