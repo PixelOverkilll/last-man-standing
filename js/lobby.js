@@ -1038,8 +1038,15 @@ function addCurrentUserAsPlayer() {
   const storedUser = localStorage.getItem('discordUser');
   const isHost = localStorage.getItem('isHost') === 'true';
 
-  if (!storedUser || isHost) {
-    console.log('User ist Host oder nicht eingeloggt - wird nicht als Spieler hinzugefügt');
+  console.log('👤 addCurrentUserAsPlayer - isHost:', isHost);
+
+  if (!storedUser) {
+    console.log('❌ Kein User gefunden');
+    return;
+  }
+
+  if (isHost) {
+    console.log('✅ User ist Host - wird NICHT als Spieler hinzugefügt');
     return;
   }
 
@@ -1048,7 +1055,7 @@ function addCurrentUserAsPlayer() {
   // Check if user is already in players list
   const existingPlayer = players.find(p => p.id === user.id);
   if (existingPlayer) {
-    console.log('User ist bereits in der Spielerliste');
+    console.log('⏭️ User ist bereits in der Spielerliste');
     return;
   }
 
