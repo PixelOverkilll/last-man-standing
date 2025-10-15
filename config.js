@@ -14,7 +14,7 @@ const CONFIG = {
     // Redirect URIs für verschiedene Umgebungen
     REDIRECT_URI: {
       development: 'http://localhost/quiz-lobby/',
-      production: 'https://pixeloverk.github.io/last-man-standing/index.html'
+      production: 'https://pixeloverkilll.github.io/last-man-standing/index.html'
     },
 
     SCOPES: 'identify+guilds.members.read'
