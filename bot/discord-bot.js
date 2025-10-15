@@ -134,10 +134,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
       const wasMuted = oldState.selfMute || oldState.serverMute;
       const isMuted = newState.selfMute || newState.serverMute;
 
+      // Update mute state
+      state.muted = isMuted;
+      state.speaking = !isMuted;
+
       if (wasMuted !== isMuted) {
         console.log(`🔇 ${member.user.tag} ist ${isMuted ? 'gemutet' : 'nicht mehr gemutet'}`);
-        state.speaking = !isMuted;
-        state.muted = isMuted;
       }
     }
   }
