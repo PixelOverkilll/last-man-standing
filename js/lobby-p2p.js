@@ -10,6 +10,7 @@ let lobbyCode = '';
 let players = [];
 let peer = null;
 let connections = [];
+let hostInfo = null; // Speichert die Host-Informationen
 
 // ========================================
 // INITIALISIERUNG
@@ -79,6 +80,25 @@ function handleNewConnection(conn) {
   conn.on('open', function() {
     console.log('✅ Spieler verbunden:', conn.peer);
 
+    // WICHTIG: Sende Host-Info an den neuen Spieler
+    const storedUser = localStorage.getItem('discordUser');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      const hostData = {
+        name: user.global_name || user.username,
+        avatar: user.avatar
+          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+          : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`
+      };
+
+      conn.send({
+        type: 'host-info',
+        host: hostData
+      });
+
+      console.log('📤 Host-Info gesendet an Spieler:', hostData.name);
+    }
+
     // Sende aktuelle Spielerliste
     conn.send({
       type: 'player-list',
@@ -135,7 +155,12 @@ function connectToHost() {
   conn.on('data', function(data) {
     console.log('📨 Daten vom Host:', data);
 
-    if (data.type === 'player-list') {
+    // WICHTIG: Empfange Host-Info und zeige sie an
+    if (data.type === 'host-info') {
+      hostInfo = data.host;
+      displayHostInfo(hostInfo);
+      console.log('✅ Host-Info empfangen:', hostInfo.name);
+    } else if (data.type === 'player-list') {
       updatePlayerList(data.players);
     } else if (data.type === 'start-quiz') {
       startQuiz();
@@ -148,6 +173,19 @@ function connectToHost() {
   });
 
   connections.push(conn);
+}
+
+// ========================================
+// HOST INFO ANZEIGEN (FÜR SPIELER)
+// ========================================
+function displayHostInfo(host) {
+  console.log('🏠 Zeige Host Info an:', host.name);
+
+  const hostAvatar = document.getElementById('host-avatar');
+  const hostName = document.getElementById('host-name');
+
+  hostAvatar.src = host.avatar;
+  hostName.textContent = host.name;
 }
 
 // ========================================
@@ -248,23 +286,25 @@ function initUI() {
   const hostControls = document.getElementById('host-controls');
 
   if (isHost) {
+    // HOST: Zeige eigene Infos
     lobbyCodeContainer.style.display = 'flex';
     hostControls.style.display = 'block';
     console.log('✅ Host-Modus aktiviert');
+    loadHostInfoForHost(); // Nur für Host
   } else {
+    // SPIELER: Warte auf Host-Info vom Peer
     lobbyCodeContainer.style.display = 'none';
     hostControls.style.display = 'none';
     console.log('✅ Spieler-Modus aktiviert');
+    setPlaceholderHost(); // Placeholder bis Host-Info kommt
   }
-
-  loadHostInfo();
 }
 
 // ========================================
-// HOST INFO LADEN
+// HOST INFO LADEN (NUR FÜR HOST SELBST)
 // ========================================
-function loadHostInfo() {
-  console.log('🏠 Lade Host Info...');
+function loadHostInfoForHost() {
+  console.log('🏠 Lade Host Info (Ich bin der Host)...');
 
   const storedUser = localStorage.getItem('discordUser');
   if (!storedUser) {
@@ -297,7 +337,7 @@ function loadHostInfo() {
 // ========================================
 function setPlaceholderHost() {
   document.getElementById('host-avatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Host';
-  document.getElementById('host-name').textContent = 'Host';
+  document.getElementById('host-name').textContent = 'Verbinde mit Host...';
 }
 
 // ========================================
