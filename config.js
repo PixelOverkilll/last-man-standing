@@ -13,7 +13,7 @@ const CONFIG = {
 
     // Redirect URIs für verschiedene Umgebungen
     REDIRECT_URI: {
-      development: 'http://localhost/quiz-lobby/',
+      development: 'http://localhost/last-man-standing/index.html',
       production: 'https://pixeloverkilll.github.io/last-man-standing/index.html'
     },
 
