@@ -13,7 +13,7 @@ const CONFIG = {
 
     // Redirect URIs für verschiedene Umgebungen
     REDIRECT_URI: {
-      development: 'http://localhost/Last%20man%20standing/index.html',
+      development: 'http://localhost/quiz-lobby/',
       production: 'https://pixeloverk.github.io/last-man-standing/index.html'
     },
 
@@ -58,4 +58,3 @@ const CONFIG = {
 console.log(`🚀 Running in ${CONFIG.ENV} mode`);
 console.log(`📍 Redirect URI: ${CONFIG.getRedirectUri()}`);
 console.log(`🤖 Bot API: ${CONFIG.getBotApiUrl()}`);
-
