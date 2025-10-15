@@ -40,6 +40,9 @@ app.use(express.json());
 // Store voice states
 const voiceStates = new Map(); // userId -> { inVoice: bool, channelId: string, speaking: bool }
 
+// Game State Store (für Synchronisation zwischen Host und Spielern)
+const gameStates = new Map(); // lobbyCode -> { started: bool, currentQuestion: number, timestamp: number }
+
 // Bot Ready Event
 client.once('ready', async () => {
   console.log(`✅ Bot eingeloggt als ${client.user.tag}`);
@@ -231,6 +234,38 @@ app.get('/api/health', (req, res) => {
     usersInVoice: voiceStates.size
   });
 });
+
+// ===== GAME STATE SYNCHRONISATION =====
+
+// Set game state (Host startet das Quiz)
+app.post('/api/game-state/:lobbyCode', (req, res) => {
+  const lobbyCode = req.params.lobbyCode;
+  const { started, currentQuestion } = req.body;
+
+  gameStates.set(lobbyCode, {
+    started: started || false,
+    currentQuestion: currentQuestion || 0,
+    timestamp: Date.now()
+  });
+
+  console.log(`🎮 Game State gesetzt für Lobby ${lobbyCode}:`, gameStates.get(lobbyCode));
+
+  res.json({ success: true, state: gameStates.get(lobbyCode) });
+});
+
+// Get game state (Spieler laden den aktuellen State)
+app.get('/api/game-state/:lobbyCode', (req, res) => {
+  const lobbyCode = req.params.lobbyCode;
+  const state = gameStates.get(lobbyCode);
+
+  if (state) {
+    res.json(state);
+  } else {
+    res.json({ started: false, currentQuestion: 0, timestamp: 0 });
+  }
+});
+
+// ===== END GAME STATE SYNCHRONISATION =====
 
 // Start Express Server
 app.listen(PORT, () => {

@@ -459,6 +459,60 @@ body {
   font-weight: 600;
 }
 
+/* Player Voice Indicator */
+.player-voice-indicator {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  background: rgba(20, 10, 30, 0.95);
+  border: 2px solid #7c3aed;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.player-voice-indicator .voice-icon {
+  font-size: 0.9rem;
+}
+
+.player-voice-indicator.speaking {
+  background: rgba(16, 185, 129, 0.95);
+  border-color: #10b981;
+  animation: pulse-indicator 0.8s ease-in-out infinite;
+}
+
+.player-voice-indicator.muted {
+  background: rgba(239, 68, 68, 0.95);
+  border-color: #ef4444;
+}
+
+.player-card.speaking .player-avatar {
+  border-color: #10b981;
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.8);
+  animation: pulse-speaking 0.8s ease-in-out infinite;
+}
+
+.player-card.muted .player-avatar {
+  border-color: #ef4444;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
+}
+
+@keyframes pulse-speaking {
+  0%, 100% {
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(16, 185, 129, 1);
+  }
+}
+
 /* Bot Suggestion Bubble */
 .bot-suggestion {
   position: absolute;

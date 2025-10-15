@@ -532,6 +532,43 @@ function startVoiceStatePolling(currentUserId) {
       }
     }
   }, 2000); // Alle 2 Sekunden aktualisieren
+
+  // Starte Game-State-Polling (nur für Spieler, nicht für Host)
+  startGameStatePolling();
+}
+
+// Game-State-Synchronisation
+function startGameStatePolling() {
+  // Prüfe Game-State alle 2 Sekunden (nur wenn Spieler, nicht Host)
+  setInterval(async () => {
+    const isHost = localStorage.getItem('isHost') === 'true';
+    if (isHost) return; // Host braucht kein Polling
+
+    try {
+      const lobbyCode = localStorage.getItem('lobbyCode');
+      if (!lobbyCode) return;
+
+      const apiUrl = CONFIG.getGameStateUrl(lobbyCode);
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        console.error('❌ Game State API nicht erreichbar');
+        return;
+      }
+
+      const gameState = await response.json();
+      console.log('🎮 Game State geladen:', gameState);
+
+      // Wenn Host das Spiel gestartet hat, starte es auch beim Spieler
+      if (gameState.started && !gameStarted) {
+        console.log('🚀 Host hat das Spiel gestartet! Starte Quiz...');
+        startQuiz();
+      }
+
+    } catch (error) {
+      console.error('❌ Fehler beim Laden des Game State:', error);
+    }
+  }, 2000); // Alle 2 Sekunden prüfen
 }
 
 function updateBotOfflineStatus() {
@@ -702,6 +739,15 @@ function updateVoiceIndicators() {
 function startQuiz() {
   gameStarted = true;
 
+  // Wenn Host: Sende Game-State an Bot API
+  const isHost = localStorage.getItem('isHost') === 'true';
+  if (isHost) {
+    const lobbyCode = localStorage.getItem('lobbyCode');
+    if (lobbyCode) {
+      sendGameStateToBot(lobbyCode, true, 0);
+    }
+  }
+
   // Hide waiting message and host controls
   document.getElementById('question-area').style.display = 'none';
   document.getElementById('host-controls').style.display = 'none';
@@ -719,6 +765,36 @@ function startQuiz() {
   setTimeout(() => {
     showBotSuggestions();
   }, 2000);
+}
+
+// Sende Game-State an Bot (nur Host)
+async function sendGameStateToBot(lobbyCode, started, currentQuestion) {
+  try {
+    const apiUrl = CONFIG.getGameStateUrl(lobbyCode);
+    console.log('🎮 Sende Game-State an Bot:', apiUrl);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        started: started,
+        currentQuestion: currentQuestion
+      })
+    });
+
+    if (!response.ok) {
+      console.error('❌ Fehler beim Senden des Game-State');
+      return;
+    }
+
+    const result = await response.json();
+    console.log('✅ Game-State erfolgreich gesendet:', result);
+
+  } catch (error) {
+    console.error('❌ Fehler beim Senden des Game-State:', error);
+  }
 }
 
 function loadQuestion(questionIndex) {
