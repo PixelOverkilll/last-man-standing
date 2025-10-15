@@ -406,10 +406,13 @@ function startVoiceStatePolling(currentUserId) {
   setInterval(async () => {
     try {
       // Nutze die konfigurierte Bot API URL (funktioniert lokal UND online)
-      const response = await fetch(CONFIG.getVoiceStatesUrl());
+      const apiUrl = CONFIG.getVoiceStatesUrl();
+      console.log('🔄 Fetching voice states from:', apiUrl);
+
+      const response = await fetch(apiUrl);
 
       if (!response.ok) {
-        console.error('Bot API nicht erreichbar');
+        console.error('❌ Bot API nicht erreichbar - Status:', response.status, response.statusText);
 
         // Zeige Warnung wenn Bot offline ist
         if (!botOfflineWarningShown) {
@@ -420,6 +423,7 @@ function startVoiceStatePolling(currentUserId) {
       }
 
       const voiceStates = await response.json();
+      console.log('✅ Voice States erfolgreich geladen:', voiceStates);
 
       // Bot ist online, verstecke Warnung
       if (botOfflineWarningShown) {
@@ -430,7 +434,8 @@ function startVoiceStatePolling(currentUserId) {
       updateAllVoiceStates(voiceStates, currentUserId);
 
     } catch (error) {
-      console.error('Fehler beim Abrufen der Voice-States:', error);
+      console.error('❌ Fehler beim Abrufen der Voice-States:', error.message);
+      console.error('❌ Vollständiger Fehler:', error);
 
       // Zeige Warnung wenn Bot nicht erreichbar ist
       if (!botOfflineWarningShown) {
