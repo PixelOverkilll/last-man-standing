@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment Variables (WICHTIG! - Discord Token nicht hochladen)
+.env
+.env.local
+.env.production
+bot/.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Build files
+dist/
+build/
+
+# XAMPP Test-Ordner (nicht hochladen)
+# Nur falls du lokale Kopien hast
