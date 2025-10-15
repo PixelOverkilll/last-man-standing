@@ -26,6 +26,24 @@
 
   <!-- PeerJS für P2P-Verbindung -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <!-- Fallback für PeerJS -->
+  <script>
+    // Prüfe ob PeerJS geladen wurde, ansonsten lade alternative Version
+    window.addEventListener('DOMContentLoaded', function() {
+      if (typeof Peer === 'undefined') {
+        console.warn('⚠️ PeerJS nicht gefunden, lade Alternative...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
+        script.onerror = function() {
+          console.error('❌ PeerJS konnte nicht geladen werden!');
+        };
+        document.head.appendChild(script);
+      } else {
+        console.log('✅ PeerJS erfolgreich geladen');
+      }
+    });
+  </script>
 </head>
 
 <body>
