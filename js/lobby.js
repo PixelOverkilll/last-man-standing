@@ -1,5 +1,85 @@
+  if (peer) peer.destroy();
+
+  localStorage.removeItem('lobbyCode');
+  localStorage.removeItem('isHost');
+
+  showNotification('Lobby verlassen', 'info', 500);
+  setTimeout(() => window.location.href = 'index.html', 500);
+}
+
 // ========================================
-// LOBBY SYSTEM - VERBESSERT MIT FARBEXTRAKTION
+// QUIZ STARTEN
+// ========================================
+function startQuiz() {
+  showNotification('Quiz startet! 🎮', 'success', 2000);
+  console.log('🎮 Quiz gestartet mit', (players.length + 1), 'Spielern');
+}
+
+// ========================================
+// FULLSCREEN TOGGLE
+// ========================================
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error('Fullscreen fehlgeschlagen:', err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// ========================================
+// BENACHRICHTIGUNG
+// ========================================
+function showNotification(message, type = 'info', duration = 2000) {
+  const notification = document.createElement('div');
+  notification.textContent = message;
+
+  const colors = {
+    success: 'rgba(16, 185, 129, 0.95)',
+    error: 'rgba(239, 68, 68, 0.95)',
+    info: 'rgba(124, 58, 237, 0.95)'
+  };
+
+  notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: ${colors[type]};
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    z-index: 200;
+    font-weight: 600;
+    font-size: 0.9rem;
+    animation: slideIn 0.2s ease-out;
+    max-width: 250px;
+  `;
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(400px)';
+    notification.style.transition = 'all 0.2s ease-out';
+    setTimeout(() => notification.remove(), 200);
+  }, duration);
+}
+
+// CSS ANIMATION
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(300px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+`;
+document.head.appendChild(style);
+
+console.log('✅ P2P Lobby System mit sofortiger Host-Anzeige geladen!');
+// ========================================
+// LOBBY SYSTEM - VERBESSERT MIT SOFORTIGER HOST-ANZEIGE
 // ========================================
 
 console.log('🎮 P2P Lobby System lädt...');
@@ -138,7 +218,7 @@ function applyPlayerColor(playerCard, color) {
 }
 
 // ========================================
-// INITIALISIERUNG - VERBESSERT
+// INITIALISIERUNG - VERBESSERT MIT SOFORTIGER HOST-ANZEIGE
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
   console.log('✅ DOM geladen');
@@ -146,7 +226,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const urlParams = new URLSearchParams(window.location.search);
   lobbyCode = urlParams.get('code') || localStorage.getItem('lobbyCode');
 
-  // VERBESSERTE HOST-ERKENNUNG
   const storedLobbyCode = localStorage.getItem('lobbyCode');
   const storedIsHost = localStorage.getItem('isHost');
 
@@ -154,12 +233,10 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('🔍 Stored Lobby Code:', storedLobbyCode);
   console.log('🔍 Stored isHost:', storedIsHost);
 
-  // Prüfe ob der URL-Code mit dem gespeicherten übereinstimmt
   if (lobbyCode && storedLobbyCode === lobbyCode && storedIsHost === 'true') {
     isHost = true;
     console.log('✅ Host erkannt! (Code stimmt überein)');
   } else if (storedIsHost === 'true' && !urlParams.get('code')) {
-    // Falls kein Code in URL, aber isHost gespeichert ist
     isHost = true;
     lobbyCode = storedLobbyCode;
     console.log('✅ Host erkannt! (Aus localStorage)');
@@ -178,12 +255,17 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // Lade User und initialisiere
   if (!loadCurrentUser()) {
     console.error('❌ Kein User gefunden - zurück zur Startseite');
     showNotification('❌ Bitte melde dich zuerst an!', 'error', 3000);
     setTimeout(() => window.location.href = 'index.html', 3000);
     return;
+  }
+
+  // WICHTIG: Zeige Host-Info SOFORT an, nicht erst nach Peer-Verbindung!
+  if (isHost) {
+    console.log('🎯 Zeige Host-Info sofort an');
+    displayHostInfo();
   }
 
   initUI();
@@ -219,7 +301,6 @@ function initPeerConnection() {
       console.log('✅ Host-Peer bereit mit ID:', id);
       console.log('📡 Host wartet auf Verbindungen...');
       showNotification('✅ Lobby bereit! Code: ' + lobbyCode, 'success', 3000);
-      displayHostInfo();
     });
 
     peer.on('connection', function(conn) {
@@ -237,8 +318,10 @@ function initPeerConnection() {
           localStorage.removeItem('isHost');
           window.location.href = 'index.html';
         }, 5000);
+      } else if (err.type === 'network') {
+        showNotification('⚠️ Netzwerkfehler - Lobby läuft offline', 'error', 3000);
       } else {
-        showNotification('Fehler: ' + err.type, 'error', 3000);
+        showNotification('⚠️ Fehler: ' + err.type, 'error', 3000);
       }
     });
 
@@ -422,7 +505,6 @@ function addPlayerToDOM(player) {
   `;
   container.appendChild(card);
 
-  // Extrahiere und wende Farbe an
   extractDominantColor(player.avatar, (color) => {
     applyPlayerColor(card, color);
   });
@@ -463,7 +545,7 @@ function displayHostInfo(hostData) {
     hostAvatar.src = hostData.avatar;
     hostName.textContent = hostData.name;
   } else if (currentUser) {
-    console.log('👑 Zeige eigene Host-Info');
+    console.log('👑 Zeige eigene Host-Info:', currentUser.global_name || currentUser.username);
     hostAvatar.src = getUserAvatar(currentUser);
     hostName.textContent = currentUser.global_name || currentUser.username;
   }
@@ -533,84 +615,4 @@ function leaveLobby() {
     if (conn.open) conn.close();
   });
 
-  if (peer) peer.destroy();
-
-  localStorage.removeItem('lobbyCode');
-  localStorage.removeItem('isHost');
-
-  showNotification('Lobby verlassen', 'info', 500);
-  setTimeout(() => window.location.href = 'index.html', 500);
-}
-
-// ========================================
-// QUIZ STARTEN
-// ========================================
-function startQuiz() {
-  showNotification('Quiz startet! 🎮', 'success', 2000);
-  console.log('🎮 Quiz gestartet mit', (players.length + 1), 'Spielern');
-}
-
-// ========================================
-// FULLSCREEN TOGGLE
-// ========================================
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.error('Fullscreen fehlgeschlagen:', err);
-    });
-  } else {
-    document.exitFullscreen();
-  }
-}
-
-// ========================================
-// BENACHRICHTIGUNG
-// ========================================
-function showNotification(message, type = 'info', duration = 2000) {
-  const notification = document.createElement('div');
-  notification.textContent = message;
-
-  const colors = {
-    success: 'rgba(16, 185, 129, 0.95)',
-    error: 'rgba(239, 68, 68, 0.95)',
-    info: 'rgba(124, 58, 237, 0.95)'
-  };
-
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: ${colors[type]};
-    color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-    z-index: 200;
-    font-weight: 600;
-    font-size: 0.9rem;
-    animation: slideIn 0.2s ease-out;
-    max-width: 250px;
-  `;
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateX(400px)';
-    notification.style.transition = 'all 0.2s ease-out';
-    setTimeout(() => notification.remove(), 200);
-  }, duration);
-}
-
-// CSS ANIMATION
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(300px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-`;
-document.head.appendChild(style);
-
-console.log('✅ P2P Lobby System mit verbesserter Host-Erkennung geladen!');
 
