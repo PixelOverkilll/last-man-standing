@@ -1,0 +1,77 @@
+    <!-- Waiting Area -->
+    <div class="question-area" id="question-area">
+      <div class="waiting-message">
+        <div class="spinner"></div>
+        <h2>Warte auf Spieler...</h2>
+        <p>Der Host startet das Quiz, wenn alle bereit sind</p>
+      </div>
+    </div>
+
+    <!-- Start Button (only for host) -->
+    <div class="host-controls" id="host-controls" style="display: none;">
+      <button class="btn btn-start" id="start-quiz-btn">
+        <span class="btn-icon">🎮</span>
+        Quiz starten
+      </button>
+    </div>
+  </div>
+
+  <!-- Players Area (Bottom Center) -->
+  <div class="players-area">
+    <div class="players-container" id="players-container">
+      <!-- Players will be added here dynamically -->
+    </div>
+  </div>
+
+  <script src="js/lobby-new.js"></script>
+
+</body>
+
+</html>
+<!doctype html>
+<html class="no-js" lang="de">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lobby - Last Man Standing</title>
+  <link rel="stylesheet" href="css/lobby.css">
+  <meta name="description" content="Quiz Lobby - Last Man Standing">
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#8b27c4">
+
+  <script src="config.js"></script>
+</head>
+
+<body>
+
+  <!-- Fullscreen Button -->
+  <button class="fullscreen-btn" id="fullscreen-btn" title="Vollbild">⛶</button>
+
+  <!-- Host Info (Top Left) -->
+  <div class="host-info">
+    <div class="host-label">Host</div>
+    <div class="host-card">
+      <div style="position: relative;">
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Host" alt="Host Avatar" id="host-avatar" class="host-avatar">
+      </div>
+      <span class="host-name" id="host-name">Lädt...</span>
+    </div>
+  </div>
+
+  <!-- Main Quiz Area -->
+  <div class="quiz-container">
+    <div class="quiz-header">
+      <h1 class="quiz-title">Last Man Standing</h1>
+      <div class="lobby-code-display" id="lobby-code-container" style="display: none;">
+        <span class="code-label">Lobby Code:</span>
+        <span class="code-value" id="lobby-code-display">------</span>
+      </div>
+    </div>
+
+
