@@ -42,18 +42,18 @@ body {
     linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
     linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
-  background-size: 120px 120px;
-  background-position: 0 0, 0 60px, 60px -60px, -60px 0;
+  background-size: 200px 200px; /* Vergrößert von 120px auf 200px */
+  background-position: 0 0, 0 100px, 100px -100px, -100px 0; /* Angepasst von 60px auf 100px */
   background-color: #2d2d2d;
   animation: checkerboard-move 30s linear infinite;
 }
 
 @keyframes checkerboard-move {
   0% {
-    background-position: 0 0, 0 60px, 60px -60px, -60px 0;
+    background-position: 0 0, 0 100px, 100px -100px, -100px 0; /* Angepasst von 60px auf 100px */
   }
   100% {
-    background-position: 120px 120px, 120px 180px, 180px 60px, 60px 120px;
+    background-position: 200px 200px, 200px 300px, 300px 100px, 100px 200px; /* Angepasst von 120px/180px/60px auf 200px/300px/100px */
   }
 }
 
@@ -325,7 +325,7 @@ body {
   background: linear-gradient(135deg, rgba(88, 28, 135, 0.3) 0%, rgba(88, 28, 135, 0.15) 100%);
   border: 3px solid #7c3aed;
   border-radius: 20px;
-  padding: 35px 30px;
+  padding: 50px 45px; /* Vergrößert von 35px 30px auf 50px 45px */
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
