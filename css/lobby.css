@@ -485,7 +485,7 @@ body {
   }
 }
 
-/* Tablet Anpassungen */
+/* Tablet Anpassungen - NUR für Host-Info, NICHT für Spieler-Karten */
 @media (min-width: 769px) and (max-width: 1024px) {
   .host-info {
     top: 15px;
@@ -517,10 +517,7 @@ body {
     max-width: 800px;
   }
 
-  .player-card {
-    min-width: 140px;
-    max-width: 160px;
-  }
+  /* Spieler-Karten behalten Desktop-Größe auf Tablets */
 }
 
 /* Sehr kleine Mobile Geräte */
