@@ -423,6 +423,52 @@ function setupEventListeners() {
   if (fullscreenBtn) {
     fullscreenBtn.addEventListener('click', toggleFullscreen);
   }
+
+  // Leave Lobby Button
+  const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
+  if (leaveLobbyBtn) {
+    leaveLobbyBtn.addEventListener('click', leaveLobby);
+  }
+}
+
+// ========================================
+// LOBBY VERLASSEN
+// ========================================
+function leaveLobby() {
+  console.log('🚪 Verlasse Lobby...');
+
+  // Bestätigungsdialog
+  const confirmLeave = confirm('Möchtest du die Lobby wirklich verlassen?');
+
+  if (!confirmLeave) {
+    console.log('❌ Abbruch - bleibe in Lobby');
+    return;
+  }
+
+  console.log('✅ Verlasse Lobby bestätigt');
+
+  // Schließe alle Peer-Verbindungen
+  if (peer) {
+    connections.forEach(conn => {
+      if (conn.open) {
+        conn.close();
+      }
+    });
+    peer.destroy();
+    console.log('🔌 Peer-Verbindungen geschlossen');
+  }
+
+  // Lösche Lobby-Daten
+  localStorage.removeItem('lobbyCode');
+  localStorage.removeItem('isHost');
+
+  // Zeige Benachrichtigung
+  showNotification('Lobby verlassen', 'info');
+
+  // Warte kurz und redirecte zur Startseite
+  setTimeout(() => {
+    window.location.href = 'index.html';
+  }, 500);
 }
 
 // ========================================
