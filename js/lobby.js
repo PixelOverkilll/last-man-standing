@@ -1,3 +1,100 @@
+
+    // Check if user is already in players list
+    const existingPlayer = players.find(p => p.id === user.id);
+    if (existingPlayer) {
+      console.log('🎮 Spieler ist bereits in der Liste');
+      return;
+    }
+
+    // Add current user as player
+    const player = {
+      id: user.id,
+      name: user.global_name || user.username,
+      avatar: user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+        : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`,
+      score: 0,
+      inVoice: false
+    };
+
+    console.log('✅ Füge aktuellen User als Spieler hinzu:', player.name);
+    addPlayer(player);
+  }
+}
+
+// Load players from voice channel (only for host)
+async function loadPlayersFromVoiceChannel() {
+  try {
+    const apiUrl = CONFIG.getGamenightUsersUrl();
+    console.log('🔄 Lade Spieler aus Voice-Channel:', apiUrl);
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      console.error('❌ Bot API nicht erreichbar');
+      return;
+    }
+
+    const voiceUsers = await response.json();
+    console.log('✅ Voice-Channel User geladen:', voiceUsers);
+
+    // Add all voice users as players (except host)
+    const storedUser = localStorage.getItem('discordUser');
+    const hostUser = storedUser ? JSON.parse(storedUser) : null;
+
+    voiceUsers.forEach(user => {
+      // Skip if user is the host
+      if (hostUser && user.id === hostUser.id) {
+        console.log('⏭️ Überspringe Host:', user.username);
+        return;
+      }
+
+      // Check if player already exists
+      const existingPlayer = players.find(p => p.id === user.id);
+      if (existingPlayer) {
+        console.log('⏭️ Spieler bereits vorhanden:', user.username);
+        return;
+      }
+
+      // Add player
+      const player = {
+        id: user.id,
+        name: user.global_name || user.username,
+        avatar: user.avatar
+          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+          : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`,
+        score: 0,
+        inVoice: true
+      };
+
+      console.log('✅ Füge Spieler aus Voice hinzu:', player.name);
+      addPlayer(player);
+    });
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden der Voice-Channel User:', error);
+  }
+}
+
+// Simulate player joining voice (for testing)
+function simulatePlayerJoinVoice(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.inVoice = true;
+    updatePlayerVoiceStatus(playerId, true);
+    console.log('✅ Spieler joined Voice:', player.name);
+  }
+}
+
+// Simulate player leaving voice (for testing)
+function simulatePlayerLeaveVoice(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.inVoice = false;
+    updatePlayerVoiceStatus(playerId, false);
+    console.log('❌ Spieler left Voice:', player.name);
+  }
+}
 // Quiz Lobby JavaScript
 
 // Quiz Questions
@@ -1052,4 +1149,16 @@ document.addEventListener('keydown', function(e) {
   // Press 'l' to simulate player leaving voice
   if (e.key === 'l' || e.key === 'L') {
     const voicePlayer = players.find(p => p.inVoice);
-    if
+    if (voicePlayer) {
+      simulatePlayerLeaveVoice(voicePlayer.id);
+    }
+  }
+});
+
+// Add current user as player (if not host)
+function addCurrentUserAsPlayer() {
+  const isHost = localStorage.getItem('isHost') === 'true';
+  const storedUser = localStorage.getItem('discordUser');
+
+  if (!isHost && storedUser) {
+    const user = JSON.parse(storedUser);
