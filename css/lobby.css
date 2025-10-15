@@ -122,13 +122,13 @@ body {
   transform: scale(1.05);
 }
 
-/* Quiz Container - Zentriert in der Mitte */
+/* Quiz Container - Oben zentriert statt mittig */
 .quiz-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
+  justify-content: flex-start;
+  padding: 60px 20px 40px;
   max-width: 1000px;
   margin: 0 auto;
   width: 100%;
