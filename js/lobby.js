@@ -109,11 +109,15 @@ function loadHostInfo() {
   const currentLobbyCode = localStorage.getItem('lobbyCode') || 'ABC123';
   const isCurrentUserHost = localStorage.getItem('isHost') === 'true';
 
+  console.log('🏠 Loading host info - isHost:', isCurrentUserHost);
+
   // If user is host, show their own info
   if (isCurrentUserHost && storedUser) {
     const user = JSON.parse(storedUser);
     const hostAvatar = document.getElementById('host-avatar');
     const hostName = document.getElementById('host-name');
+
+    console.log('✅ User ist Host, zeige eigenes Profil:', user.username);
 
     // Set host avatar
     if (user.avatar) {
@@ -139,19 +143,69 @@ function loadHostInfo() {
 
     hostName.textContent = user.global_name || user.username;
   } else {
-    // If user is NOT host, show placeholder
-    // TODO: In future, fetch host info from server
-    const testAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Host&backgroundColor=b6e3f4';
-    document.getElementById('host-avatar').src = testAvatar;
-    document.getElementById('host-name').textContent = 'Host';
-
-    // For test mode, apply default purple color
-    console.log('Kein Host - verwende Platzhalter');
-    applyHostThemeColor('rgb(124, 58, 237)'); // Default purple
+    // User is NOT host - try to load host info from voice channel users
+    console.log('👤 User ist NICHT Host, versuche Host zu laden...');
+    loadHostFromVoiceChannel();
   }
 
   // Set lobby code
   document.getElementById('lobby-code-display').textContent = currentLobbyCode;
+}
+
+// Load host info from voice channel (for players)
+async function loadHostFromVoiceChannel() {
+  try {
+    const apiUrl = CONFIG.getGamenightUsersUrl();
+    console.log('🔄 Lade Voice-Channel User um Host zu finden:', apiUrl);
+
+    const response = await fetch(apiUrl);
+
+    if (!response.ok) {
+      console.error('❌ Bot API nicht erreichbar - zeige Platzhalter');
+      showPlaceholderHost();
+      return;
+    }
+
+    const voiceUsers = await response.json();
+    console.log('✅ Voice-Channel User geladen:', voiceUsers);
+
+    // First user in voice is the host (or we could implement proper host tracking)
+    if (voiceUsers.length > 0) {
+      const hostUser = voiceUsers[0]; // First user = Host
+      const hostAvatar = document.getElementById('host-avatar');
+      const hostName = document.getElementById('host-name');
+
+      console.log('🏠 Host gefunden:', hostUser.username);
+
+      // Set host avatar
+      const avatarUrl = hostUser.avatar
+        ? `https://cdn.discordapp.com/avatars/${hostUser.id}/${hostUser.avatar}.png?size=128`
+        : `https://cdn.discordapp.com/embed/avatars/${parseInt(hostUser.discriminator || '0') % 5}.png`;
+
+      hostAvatar.src = avatarUrl;
+      hostName.textContent = hostUser.global_name || hostUser.username;
+
+      // Extract and apply color
+      extractDominantColor(avatarUrl, (color) => {
+        applyHostThemeColor(color);
+      });
+    } else {
+      console.log('⚠️ Keine User im Voice-Channel');
+      showPlaceholderHost();
+    }
+
+  } catch (error) {
+    console.error('❌ Fehler beim Laden des Hosts:', error);
+    showPlaceholderHost();
+  }
+}
+
+// Show placeholder host when real host can't be loaded
+function showPlaceholderHost() {
+  const testAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Host&backgroundColor=b6e3f4';
+  document.getElementById('host-avatar').src = testAvatar;
+  document.getElementById('host-name').textContent = 'Host';
+  applyHostThemeColor('rgb(124, 58, 237)'); // Default purple
 }
 
 // Extract dominant color from image
