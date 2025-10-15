@@ -73,7 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
     isHost = localStorage.getItem('isHost') === 'true';
   }
 
-  // Load host info
+  // WICHTIG: Setze das isHost-Flag BEVOR loadHostInfo() aufgerufen wird
+  console.log('🔍 isHost gesetzt auf:', isHost);
+  console.log('🔍 localStorage isHost:', localStorage.getItem('isHost'));
+
+  // Load host info (NACH dem isHost-Flag gesetzt wurde)
   loadHostInfo();
 
   // Load players
