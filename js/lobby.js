@@ -143,16 +143,13 @@ function applyPlayerColor(playerCard, color) {
 // ========================================
 
 // Host erstellt Lobby
-async function createLobby() {
-  console.log('🎮 Erstelle P2P-Lobby als Host...');
-
-  // Generiere Lobby-Code
-  lobbyCode = generateLobbyCode();
+async function createLobby(code) {
+  console.log('🎮 Erstelle P2P-Lobby als Host mit Code:', code);
 
   return new Promise((resolve, reject) => {
-    // Erstelle Peer mit Lobby-Code als ID
-    peer = new Peer(lobbyCode, {
-      debug: 2,
+    // Erstelle Peer mit dem übergebenen Lobby-Code als ID
+    peer = new Peer(code, {
+      debug: 1,
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
@@ -167,13 +164,13 @@ async function createLobby() {
 
       // Füge Host zu Spielerliste hinzu
       const hostPlayer = {
-        id: 'host',
+        id: 'host-' + Date.now(),
         name: currentUser.global_name || currentUser.username,
         avatar: getUserAvatar(currentUser),
         score: 0,
         isHost: true
       };
-      players.set('host', hostPlayer);
+      players.set(hostPlayer.id, hostPlayer);
       addPlayerToDOM(hostPlayer);
 
       resolve(id);
@@ -187,6 +184,7 @@ async function createLobby() {
 
     // Lausche auf eingehende Verbindungen
     peer.on('connection', (conn) => {
+      console.log('👥 Eingehende Verbindung von:', conn.peer);
       handleIncomingConnection(conn);
     });
   });
@@ -256,6 +254,8 @@ function handleIncomingConnection(conn) {
   setupConnection(conn, false);
 
   conn.on('open', () => {
+    console.log('✅ Verbindung geöffnet mit:', conn.peer);
+
     const player = conn.metadata?.player || {
       id: conn.peer,
       name: 'Spieler_' + conn.peer.substring(0, 4),
@@ -264,6 +264,8 @@ function handleIncomingConnection(conn) {
       isHost: false
     };
 
+    console.log('➕ Füge Spieler hinzu:', player);
+
     connections.set(player.id, conn);
     players.set(player.id, player);
 
@@ -271,11 +273,14 @@ function handleIncomingConnection(conn) {
     addPlayerToDOM(player);
 
     // Sende aktuelle Lobby-Daten an neuen Spieler
-    conn.send({
-      type: 'lobby-state',
-      host: players.get('host'),
-      players: Array.from(players.values())
-    });
+    setTimeout(() => {
+      console.log('📤 Sende Lobby-State an:', player.name);
+      conn.send({
+        type: 'lobby-state',
+        host: Array.from(players.values()).find(p => p.isHost),
+        players: Array.from(players.values())
+      });
+    }, 500);
 
     // Benachrichtige alle anderen über den neuen Spieler
     broadcast({
@@ -461,12 +466,16 @@ document.addEventListener('DOMContentLoaded', async function() {
   // Starte P2P-Verbindung
   try {
     if (isHost) {
-      await createLobby();
+      // Host verwendet den Code aus der URL
+      await createLobby(lobbyCode);
       displayHostInfo();
       showNotification('✅ Lobby erstellt! Code: ' + lobbyCode, 'success', 3000);
       localStorage.setItem('lobbyCode', lobbyCode);
+      console.log('✅ Host-Lobby bereit. Warte auf Spieler...');
     } else {
+      console.log('🔗 Versuche Lobby beizutreten:', lobbyCode);
       await joinLobby(lobbyCode);
+      console.log('✅ Client erfolgreich verbunden');
     }
   } catch (error) {
     console.error('❌ P2P-Verbindung fehlgeschlagen:', error);
