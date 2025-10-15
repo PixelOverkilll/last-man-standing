@@ -1,99 +1,3 @@
-// Check if user is already in players list
-    const existingPlayer = players.find(p => p.id === user.id);
-    if (existingPlayer) {
-      console.log('🎮 Spieler ist bereits in der Liste');
-      return;
-    }
-
-    // Add current user as player
-    const player = {
-      id: user.id,
-      name: user.global_name || user.username,
-      avatar: user.avatar
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-        : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`,
-      score: 0,
-      inVoice: false
-    };
-
-    console.log('✅ Füge aktuellen User als Spieler hinzu:', player.name);
-    addPlayer(player);
-  }
-}
-
-// Load players from voice channel (only for host)
-async function loadPlayersFromVoiceChannel() {
-  try {
-    const apiUrl = CONFIG.getGamenightUsersUrl();
-    console.log('🔄 Lade Spieler aus Voice-Channel:', apiUrl);
-
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      console.error('❌ Bot API nicht erreichbar');
-      return;
-    }
-
-    const voiceUsers = await response.json();
-    console.log('✅ Voice-Channel User geladen:', voiceUsers);
-
-    // Add all voice users as players (except host)
-    const storedUser = localStorage.getItem('discordUser');
-    const hostUser = storedUser ? JSON.parse(storedUser) : null;
-
-    voiceUsers.forEach(user => {
-      // Skip if user is the host
-      if (hostUser && user.id === hostUser.id) {
-        console.log('⏭️ Überspringe Host:', user.username);
-        return;
-      }
-
-      // Check if player already exists
-      const existingPlayer = players.find(p => p.id === user.id);
-      if (existingPlayer) {
-        console.log('⏭️ Spieler bereits vorhanden:', user.username);
-        return;
-      }
-
-      // Add player
-      const player = {
-        id: user.id,
-        name: user.global_name || user.username,
-        avatar: user.avatar
-          ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-          : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`,
-        score: 0,
-        inVoice: true
-      };
-
-      console.log('✅ Füge Spieler aus Voice hinzu:', player.name);
-      addPlayer(player);
-    });
-
-  } catch (error) {
-    console.error('❌ Fehler beim Laden der Voice-Channel User:', error);
-  }
-}
-
-// Simulate player joining voice (for testing)
-function simulatePlayerJoinVoice(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (player) {
-    player.inVoice = true;
-    updatePlayerVoiceStatus(playerId, true);
-    console.log('✅ Spieler joined Voice:', player.name);
-  }
-}
-
-// Simulate player leaving voice (for testing)
-function simulatePlayerLeaveVoice(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (player) {
-    player.inVoice = false;
-    updatePlayerVoiceStatus(playerId, false);
-    console.log('❌ Spieler left Voice:', player.name);
-  }
-}
 // Quiz Lobby JavaScript
 
 // Quiz Questions
@@ -206,8 +110,6 @@ function loadHostInfo() {
   const isCurrentUserHost = localStorage.getItem('isHost') === 'true';
 
   console.log('🏠 Loading host info - isHost:', isCurrentUserHost);
-  console.log('🔍 Stored User:', storedUser);
-  console.log('🔍 Lobby Code:', currentLobbyCode);
 
   // If user is host, show their own info
   if (isCurrentUserHost && storedUser) {
@@ -216,18 +118,10 @@ function loadHostInfo() {
     const hostName = document.getElementById('host-name');
 
     console.log('✅ User ist Host, zeige eigenes Profil:', user.username);
-    console.log('🔍 Host Avatar Element:', hostAvatar);
-    console.log('🔍 Host Name Element:', hostName);
-
-    if (!hostAvatar || !hostName) {
-      console.error('❌ Host Avatar oder Name Element nicht gefunden!');
-      return;
-    }
 
     // Set host avatar
     if (user.avatar) {
       const avatarUrl = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
-      console.log('🖼️ Setting avatar URL:', avatarUrl);
       hostAvatar.src = avatarUrl;
 
       // Extract and apply dominant color from avatar
@@ -238,7 +132,6 @@ function loadHostInfo() {
     } else {
       const defaultAvatarNum = parseInt(user.discriminator || '0') % 5;
       const defaultAvatar = `https://cdn.discordapp.com/embed/avatars/${defaultAvatarNum}.png`;
-      console.log('🖼️ Setting default avatar:', defaultAvatar);
       hostAvatar.src = defaultAvatar;
 
       // Extract color from default avatar too
@@ -249,41 +142,21 @@ function loadHostInfo() {
     }
 
     hostName.textContent = user.global_name || user.username;
-    console.log('✅ Host Name gesetzt auf:', hostName.textContent);
   } else {
     // User is NOT host - try to load host info from voice channel users
     console.log('👤 User ist NICHT Host, versuche Host zu laden...');
-    if (!storedUser) {
-      console.error('❌ Kein Discord User im localStorage gefunden!');
-    }
     loadHostFromVoiceChannel();
   }
 
   // Set lobby code
-  const lobbyCodeDisplay = document.getElementById('lobby-code-display');
-  console.log('🔍 Lobby Code Display Element:', lobbyCodeDisplay);
-  if (lobbyCodeDisplay) {
-    lobbyCodeDisplay.textContent = currentLobbyCode;
-    console.log('✅ Lobby Code gesetzt auf:', currentLobbyCode);
-  } else {
-    console.error('❌ Lobby Code Display Element nicht gefunden!');
-  }
+  document.getElementById('lobby-code-display').textContent = currentLobbyCode;
 
   // Show lobby code ONLY for host
   const lobbyCodeContainer = document.getElementById('lobby-code-container');
-  console.log('🔍 Lobby Code Container Element:', lobbyCodeContainer);
-  console.log('🔍 isCurrentUserHost:', isCurrentUserHost);
-
-  if (lobbyCodeContainer) {
-    if (isCurrentUserHost) {
-      lobbyCodeContainer.style.display = 'flex';
-      console.log('✅ Lobby Code Container wird angezeigt (Host)');
-    } else {
-      lobbyCodeContainer.style.display = 'none';
-      console.log('🔒 Lobby Code Container wird versteckt (Spieler)');
-    }
+  if (isCurrentUserHost) {
+    lobbyCodeContainer.style.display = 'flex';
   } else {
-    console.error('❌ Lobby Code Container Element nicht gefunden!');
+    lobbyCodeContainer.style.display = 'none';
   }
 }
 
@@ -1179,16 +1052,4 @@ document.addEventListener('keydown', function(e) {
   // Press 'l' to simulate player leaving voice
   if (e.key === 'l' || e.key === 'L') {
     const voicePlayer = players.find(p => p.inVoice);
-    if (voicePlayer) {
-      simulatePlayerLeaveVoice(voicePlayer.id);
-    }
-  }
-});
-
-// Add current user as player (if not host)
-function addCurrentUserAsPlayer() {
-  const isHost = localStorage.getItem('isHost') === 'true';
-  const storedUser = localStorage.getItem('discordUser');
-
-  if (!isHost && storedUser) {
-    const user = JSON.parse(storedUser);
+    if
