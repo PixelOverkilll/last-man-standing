@@ -24,7 +24,7 @@ const CONFIG = {
   BOT_API: {
     BASE_URL: {
       development: 'http://localhost:3000',
-      production: 'https://last-man-standing-bot.onrender.com'
+      production: 'https://last-man-standing-n81r.onrender.com'
     },
 
     ENDPOINTS: {
