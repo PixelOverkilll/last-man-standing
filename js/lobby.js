@@ -162,16 +162,8 @@ async function createLobby(code) {
       console.log('✅ P2P-Lobby erstellt mit Code:', id);
       lobbyCode = id;
 
-      // Füge Host zu Spielerliste hinzu
-      const hostPlayer = {
-        id: 'host-' + Date.now(),
-        name: currentUser.global_name || currentUser.username,
-        avatar: getUserAvatar(currentUser),
-        score: 0,
-        isHost: true
-      };
-      players.set(hostPlayer.id, hostPlayer);
-      addPlayerToDOM(hostPlayer);
+      // Host wird NICHT als Spieler hinzugefügt, nur als Host-Info gespeichert
+      console.log('👑 Host bereit, warte auf Spieler...');
 
       resolve(id);
     });
@@ -611,8 +603,8 @@ function leaveLobby() {
 }
 
 function startQuiz() {
-  if (players.size < 2) {
-    showNotification('⚠️ Mindestens 2 Spieler benötigt', 'error', 2000);
+  if (players.size < 1) {
+    showNotification('⚠️ Mindestens 1 Spieler benötigt', 'error', 2000);
     return;
   }
 
