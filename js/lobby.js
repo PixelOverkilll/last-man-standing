@@ -1,4 +1,4 @@
-// Quiz Lobby JavaScript with Test Data
+// Quiz Lobby JavaScript
 
 // Quiz Questions
 const quizQuestions = [
@@ -19,30 +19,8 @@ const quizQuestions = [
   }
 ];
 
-// Test Players (no host as player)
-const testPlayers = [
-  {
-    id: "player1",
-    name: "MaxMustermann",
-    avatar: "https://i.pravatar.cc/150?img=12",
-    score: 0,
-    inVoice: true
-  },
-  {
-    id: "player2",
-    name: "LauraSchmidt",
-    avatar: "https://i.pravatar.cc/150?img=25",
-    score: 0,
-    inVoice: false
-  },
-  {
-    id: "player3",
-    name: "TimKaiser",
-    avatar: "https://i.pravatar.cc/150?img=33",
-    score: 0,
-    inVoice: true
-  }
-];
+// Players Array - LEER! Spieler werden dynamisch hinzugefügt
+const players = [];
 
 // Game State
 let currentQuestion = 0;
@@ -51,8 +29,26 @@ let gameStarted = false;
 let timerInterval = null;
 let botSuggestions = {};
 let voiceUsers = []; // Track users in voice channel
+let isHost = false;
+let lobbyCode = '';
 
 document.addEventListener('DOMContentLoaded', function() {
+
+  // Check URL for lobby code
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlLobbyCode = urlParams.get('code');
+
+  if (urlLobbyCode) {
+    // User joined via URL with lobby code - NOT host
+    lobbyCode = urlLobbyCode;
+    isHost = false;
+    localStorage.setItem('lobbyCode', lobbyCode);
+    localStorage.setItem('isHost', 'false');
+  } else {
+    // Check if already in a lobby
+    lobbyCode = localStorage.getItem('lobbyCode');
+    isHost = localStorage.getItem('isHost') === 'true';
+  }
 
   // Load host info
   loadHostInfo();
@@ -69,8 +65,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // Setup fullscreen button
   setupFullscreen();
 
-  // Check for Discord voice state (simulate for now)
+  // Check for Discord voice state
   checkDiscordVoiceState();
+
+  // Add current user as player if not host
+  addCurrentUserAsPlayer();
 });
 
 function loadHostInfo() {
@@ -259,7 +258,7 @@ function loadPlayers() {
   const playersContainer = document.getElementById('players-container');
   playersContainer.innerHTML = '';
 
-  testPlayers.forEach(player => {
+  players.forEach(player => {
     addPlayerToDOM(player);
   });
 
@@ -293,7 +292,7 @@ function addPlayerToDOM(player) {
 }
 
 function addPlayer(player) {
-  testPlayers.push(player);
+  players.push(player);
   addPlayerToDOM(player);
 }
 
@@ -515,7 +514,7 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
   }
 
   // Update alle Spieler
-  testPlayers.forEach(player => {
+  players.forEach(player => {
     const playerState = voiceStates.find(state => state.userId === player.id);
     if (playerState) {
       updatePlayerVoiceStatus(player.id, true, playerState.speaking);
@@ -595,7 +594,7 @@ function updatePlayerVoiceStatus(playerId, inVoice, isSpeaking = false) {
 }
 
 function updateVoiceIndicators() {
-  testPlayers.forEach(player => {
+  players.forEach(player => {
     if (player.inVoice) {
       updatePlayerVoiceStatus(player.id, true);
     }
@@ -731,13 +730,13 @@ function checkAnswer() {
 
 function updatePlayerScore(points) {
   // Update first player score (simulating current user)
-  if (testPlayers.length > 0) {
-    testPlayers[0].score += points;
+  if (players.length > 0) {
+    players[0].score += points;
 
-    const playerCard = document.getElementById(`player-${testPlayers[0].id}`);
+    const playerCard = document.getElementById(`player-${players[0].id}`);
     if (playerCard) {
       const scoreElement = playerCard.querySelector('.player-score');
-      scoreElement.textContent = `${testPlayers[0].score} Punkte`;
+      scoreElement.textContent = `${players[0].score} Punkte`;
     }
   }
 }
@@ -746,7 +745,7 @@ function updateBotScores() {
   const question = quizQuestions[currentQuestion];
 
   // Update scores for all bots based on their suggestions
-  testPlayers.forEach((player) => {
+  players.forEach((player) => {
     if (botSuggestions[player.id] !== undefined) {
       if (botSuggestions[player.id] === question.correctAnswer) {
         player.score += 10;
@@ -762,7 +761,7 @@ function updateBotScores() {
 
 function showBotSuggestions() {
   // All players (bots) suggest answers
-  testPlayers.forEach((player) => {
+  players.forEach((player) => {
     const question = quizQuestions[currentQuestion];
     let suggestedAnswer;
 
@@ -814,7 +813,7 @@ function showResults() {
   const questionContent = document.getElementById('question-content');
 
   // Sort players by score
-  testPlayers.sort((a, b) => b.score - a.score);
+  players.sort((a, b) => b.score - a.score);
 
   let resultsHTML = `
     <div class="question-number">Quiz Beendet!</div>
@@ -822,7 +821,7 @@ function showResults() {
     <div style="text-align: center; color: #e9d5ff;">
   `;
 
-  testPlayers.forEach((player, index) => {
+  players.forEach((player, index) => {
     const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📊';
     resultsHTML += `
       <div style="font-size: 1.3rem; margin: 20px 0;">
@@ -862,7 +861,7 @@ document.addEventListener('keydown', function(e) {
 
   // Press 'j' to simulate player joining voice
   if (e.key === 'j' || e.key === 'J') {
-    const randomPlayer = testPlayers[Math.floor(Math.random() * testPlayers.length)];
+    const randomPlayer = players[Math.floor(Math.random() * players.length)];
     if (randomPlayer && !randomPlayer.inVoice) {
       simulatePlayerJoinVoice(randomPlayer.id);
     }
@@ -870,9 +869,45 @@ document.addEventListener('keydown', function(e) {
 
   // Press 'l' to simulate player leaving voice
   if (e.key === 'l' || e.key === 'L') {
-    const voicePlayer = testPlayers.find(p => p.inVoice);
+    const voicePlayer = players.find(p => p.inVoice);
     if (voicePlayer) {
       simulatePlayerLeaveVoice(voicePlayer.id);
     }
   }
 });
+
+// Add current user as player (if not host)
+function addCurrentUserAsPlayer() {
+  const storedUser = localStorage.getItem('discordUser');
+  const isHost = localStorage.getItem('isHost') === 'true';
+
+  if (!storedUser || isHost) {
+    console.log('User ist Host oder nicht eingeloggt - wird nicht als Spieler hinzugefügt');
+    return;
+  }
+
+  const user = JSON.parse(storedUser);
+
+  // Check if user is already in players list
+  const existingPlayer = players.find(p => p.id === user.id);
+  if (existingPlayer) {
+    console.log('User ist bereits in der Spielerliste');
+    return;
+  }
+
+  // Add user as player
+  const avatarUrl = user.avatar
+    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`;
+
+  const newPlayer = {
+    id: user.id,
+    name: user.global_name || user.username,
+    avatar: avatarUrl,
+    score: 0,
+    inVoice: false
+  };
+
+  addPlayer(newPlayer);
+  console.log('✅ User als Spieler hinzugefügt:', newPlayer.name);
+}

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: last-man-standing-bot
+    env: node
+    region: frankfurt
+    buildCommand: cd bot && npm install
+    startCommand: cd bot && node discord-bot.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+

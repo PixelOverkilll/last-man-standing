@@ -321,8 +321,8 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('lobbyCode', lobbyCode);
     localStorage.setItem('isHost', 'true');
 
-    // Redirect to lobby
-    window.location.href = 'lobby.html';
+    // Redirect to lobby with code in URL
+    window.location.href = `lobby.html?code=${lobbyCode}`;
   });
 
   // Join Lobby Button
@@ -334,8 +334,8 @@ document.addEventListener('DOMContentLoaded', function() {
       localStorage.setItem('lobbyCode', lobbyCode);
       localStorage.setItem('isHost', 'false');
 
-      // Redirect to lobby
-      window.location.href = 'lobby.html';
+      // Redirect to lobby with code in URL
+      window.location.href = `lobby.html?code=${lobbyCode}`;
     } else {
       alert('Bitte gib einen gültigen Lobby-Code ein');
     }
