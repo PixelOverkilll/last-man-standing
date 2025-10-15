@@ -335,8 +335,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🎮 Erstelle Lobby mit Code:', lobbyCode);
     console.log('🎮 User:', userData.username);
 
-    // Redirect to lobby with code in URL
-    window.location.href = `lobby-new.html?code=${lobbyCode}`;
+    // Redirect to NEW lobby system
+    window.location.href = `lobby.html?code=${lobbyCode}`;
   });
 
   // Join Lobby Button
@@ -351,16 +351,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      const userData = JSON.parse(storedUser);
-      const lobbyCode = lobbyCodeInput.value.trim();
+      console.log('✅ Discord User gefunden:', storedUser);
 
-      localStorage.setItem('lobbyCode', lobbyCode);
+      const userData = JSON.parse(storedUser);
+      const code = lobbyCodeInput.value.trim();
+
+      localStorage.setItem('lobbyCode', code);
       localStorage.setItem('isHost', 'false');
 
-      // Redirect to lobby with code in URL
-      window.location.href = `lobby-new.html?code=${lobbyCode}`;
-    } else {
-      alert('Bitte gib einen gültigen Lobby-Code ein');
+      console.log('🎮 Trete Lobby bei mit Code:', code);
+      console.log('🎮 User:', userData.username);
+
+      // Redirect to NEW lobby system
+      window.location.href = `lobby.html?code=${code}`;
     }
   });
 

@@ -1,137 +1,67 @@
 <!doctype html>
-<html class="no-js" lang="de">
-
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quiz Lobby - Last Man Standing</title>
+  <title>Lobby - Last Man Standing</title>
   <link rel="stylesheet" href="css/lobby.css">
-  <meta name="description" content="Quiz Lobby - Warte auf das Spiel!">
-
   <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.png">
-
-  <link rel="manifest" href="site.webmanifest">
   <meta name="theme-color" content="#8b27c4">
-
-  <!-- Configuration Script (muss VOR lobby.js geladen werden) -->
-  <script src="config.js"></script>
 </head>
-
 <body>
-
-  <!-- Fullscreen Button -->
-  <button class="fullscreen-btn" id="fullscreen-btn" title="Vollbild">⛶</button>
-
-  <!-- Debug Info (Top Right - unter Fullscreen Button) -->
-  <div style="position: fixed; top: 70px; right: 15px; z-index: 100; background: rgba(20, 10, 30, 0.95); border: 3px solid #7c3aed; border-radius: 15px; padding: 20px; max-width: 300px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);">
-    <h3 style="color: #e9d5ff; font-size: 1rem; margin-bottom: 15px; text-align: center;">🔍 Voice Debug</h3>
-    <div id="debug-info" style="color: #c4b5fd; font-size: 0.9rem; line-height: 1.6;">
-      <div style="margin-bottom: 10px;">
-        <strong style="color: #a78bfa;">Bot Status:</strong>
-        <span id="debug-bot-status" style="color: #ef4444;">Lädt...</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong style="color: #a78bfa;">Im Voice:</strong>
-        <span id="debug-in-voice" style="color: #ef4444;">Nein</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong style="color: #a78bfa;">Gemutet:</strong>
-        <span id="debug-muted" style="color: #ef4444;">Unbekannt</span>
-      </div>
-      <div style="margin-bottom: 10px;">
-        <strong style="color: #a78bfa;">Spricht:</strong>
-        <span id="debug-speaking" style="color: #ef4444;">Nein</span>
-      </div>
-      <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #7c3aed;">
-        <strong style="color: #a78bfa;">User ID:</strong>
-        <div id="debug-user-id" style="color: #c4b5fd; font-size: 0.75rem; word-break: break-all; margin-top: 5px;">-</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Host Info (Top Left) -->
   <div class="host-info">
-    <div class="host-label">Host</div>
+    <div class="host-label">👑 HOST</div>
     <div class="host-card">
-      <div style="position: relative;">
-        <img src="" alt="Host Avatar" id="host-avatar" class="host-avatar">
-        <!-- Voice Status Indicator -->
-        <div id="host-voice-indicator" class="voice-status-indicator" style="display: none;">
-          <span class="voice-icon">🎤</span>
-        </div>
-      </div>
-      <span class="host-name" id="host-name">Host Name</span>
+      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Host" alt="Host Avatar" class="host-avatar" id="host-avatar">
+      <div class="host-name" id="host-name">Host lädt...</div>
     </div>
   </div>
 
-  <!-- Main Quiz Area -->
+  <!-- Action Buttons (Top Right) -->
+  <button class="leave-lobby-btn" id="leave-lobby-btn" title="Lobby verlassen">
+    <span class="leave-icon">🚪</span>
+  </button>
+  <button class="fullscreen-btn" id="fullscreen-btn" title="Vollbild">
+    <span>⛶</span>
+  </button>
+
+  <!-- Main Content -->
   <div class="quiz-container">
     <div class="quiz-header">
       <h1 class="quiz-title">Last Man Standing</h1>
       <div class="lobby-code-display" id="lobby-code-container">
-        <span class="code-label">Lobby Code:</span>
-        <span class="code-value" id="lobby-code-display">ABC123</span>
+        <span class="code-label">Lobby-Code:</span>
+        <span class="code-value" id="lobby-code-display">------</span>
       </div>
     </div>
 
-    <!-- Question Display Area -->
-    <div class="question-area" id="question-area">
+    <div class="question-area">
       <div class="waiting-message">
         <div class="spinner"></div>
         <h2>Warte auf Spieler...</h2>
-        <p>Der Host startet das Quiz, wenn alle bereit sind</p>
-      </div>
-    </div>
-
-    <!-- Question Content (hidden initially) -->
-    <div class="question-content" id="question-content" style="display: none;">
-      <div class="question-number" id="question-number">Frage 1 von 3</div>
-      <h2 class="question-text" id="question-text">Was ist die Hauptstadt von Deutschland?</h2>
-
-      <div class="answers-grid" id="answers-grid">
-        <button class="answer-btn" data-answer="0">
-          <span class="answer-letter">A</span>
-          <span class="answer-text">Berlin</span>
-        </button>
-        <button class="answer-btn" data-answer="1">
-          <span class="answer-letter">B</span>
-          <span class="answer-text">München</span>
-        </button>
-        <button class="answer-btn" data-answer="2">
-          <span class="answer-letter">C</span>
-          <span class="answer-text">Hamburg</span>
-        </button>
-        <button class="answer-btn" data-answer="3">
-          <span class="answer-letter">D</span>
-          <span class="answer-text">Frankfurt</span>
-        </button>
+        <p>Teile den Lobby-Code mit deinen Freunden!</p>
       </div>
 
-      <div class="timer-bar">
-        <div class="timer-fill" id="timer-fill"></div>
+      <!-- Host Controls -->
+      <div class="host-controls" id="host-controls" style="display: none;">
+        <button class="btn btn-start" id="start-quiz-btn">
+          <span class="btn-icon">▶️</span>
+          Quiz starten
+        </button>
       </div>
-    </div>
-
-    <!-- Start Button (only for host) -->
-    <div class="host-controls" id="host-controls" style="display: none;">
-      <button class="btn btn-start" id="start-quiz-btn">
-        <span class="btn-icon">🎮</span>
-        Quiz starten
-      </button>
     </div>
   </div>
 
-  <!-- Players Area (Bottom Center) -->
+  <!-- Players Area (Bottom) -->
   <div class="players-area">
     <div class="players-container" id="players-container">
-      <!-- Players will be added here dynamically -->
+      <!-- Players werden hier dynamisch hinzugefügt -->
     </div>
   </div>
 
   <script src="js/lobby.js"></script>
-
 </body>
-
 </html>
+
