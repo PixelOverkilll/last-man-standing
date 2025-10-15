@@ -42,16 +42,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // User is HOST if they created the lobby (isHost flag from index.html)
   // User is PLAYER if they joined via lobby code (even if it's the same code)
   const wasHostFlagSet = localStorage.getItem('isHost') === 'true';
+  const storedLobbyCode = localStorage.getItem('lobbyCode');
 
   if (urlLobbyCode) {
     // User opened lobby with code in URL
     lobbyCode = urlLobbyCode;
 
-    // Check if user just created this lobby (host flag is set)
-    if (wasHostFlagSet) {
+    // Check if this is the SAME lobby they created OR if host flag is set
+    if (wasHostFlagSet && storedLobbyCode === urlLobbyCode) {
       // User created this lobby - they are the HOST
       isHost = true;
+      localStorage.setItem('isHost', 'true'); // Keep the flag
       console.log('✅ Du bist der HOST dieser Lobby');
+    } else if (wasHostFlagSet && !storedLobbyCode) {
+      // User just created the lobby
+      isHost = true;
+      localStorage.setItem('isHost', 'true');
+      console.log('✅ Du bist der HOST dieser Lobby (neu erstellt)');
     } else {
       // User joined via code - they are a PLAYER
       isHost = false;
@@ -62,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('lobbyCode', lobbyCode);
   } else {
     // No code in URL - check existing session
-    lobbyCode = localStorage.getItem('lobbyCode');
+    lobbyCode = localStorage.getItem('lobbyCode') || 'ABC123';
     isHost = localStorage.getItem('isHost') === 'true';
   }
 
