@@ -315,11 +315,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Create Lobby Button
   createLobbyBtn.addEventListener('click', function() {
-    const userData = JSON.parse(localStorage.getItem('discordUser'));
+    // WICHTIG: Prüfe ob User eingeloggt ist
+    const storedUser = localStorage.getItem('discordUser');
+
+    if (!storedUser) {
+      console.error('❌ Kein Discord User gefunden! Bitte melde dich zuerst an.');
+      alert('Bitte melde dich zuerst mit Discord an!');
+      return;
+    }
+
+    console.log('✅ Discord User gefunden:', storedUser);
+
+    const userData = JSON.parse(storedUser);
     const lobbyCode = generateLobbyCode();
 
     localStorage.setItem('lobbyCode', lobbyCode);
     localStorage.setItem('isHost', 'true');
+
+    console.log('🎮 Erstelle Lobby mit Code:', lobbyCode);
+    console.log('🎮 User:', userData.username);
 
     // Redirect to lobby with code in URL
     window.location.href = `lobby.html?code=${lobbyCode}`;
@@ -328,7 +342,16 @@ document.addEventListener('DOMContentLoaded', function() {
   // Join Lobby Button
   joinLobbyBtn.addEventListener('click', function() {
     if (isLobbyCodeValid()) {
-      const userData = JSON.parse(localStorage.getItem('discordUser'));
+      // WICHTIG: Prüfe ob User eingeloggt ist
+      const storedUser = localStorage.getItem('discordUser');
+
+      if (!storedUser) {
+        console.error('❌ Kein Discord User gefunden! Bitte melde dich zuerst an.');
+        alert('Bitte melde dich zuerst mit Discord an!');
+        return;
+      }
+
+      const userData = JSON.parse(storedUser);
       const lobbyCode = lobbyCodeInput.value.trim();
 
       localStorage.setItem('lobbyCode', lobbyCode);
