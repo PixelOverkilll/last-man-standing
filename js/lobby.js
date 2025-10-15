@@ -1,5 +1,5 @@
 // ========================================
-// LOBBY SYSTEM - EINFACHES PEER-TO-PEER
+// LOBBY SYSTEM - FUNKTIONIERENDES PEER-TO-PEER
 // ========================================
 
 console.log('🎮 P2P Lobby System lädt...');
@@ -38,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
   initUI();
   setupEventListeners();
 
-  // Starte P2P-Verbindung
-  initPeerConnection();
+  // Starte P2P-Verbindung mit kurzer Verzögerung
+  setTimeout(() => initPeerConnection(), 300);
 });
 
 // ========================================
@@ -48,42 +48,90 @@ document.addEventListener('DOMContentLoaded', function() {
 function initPeerConnection() {
   console.log('🌐 Initialisiere P2P...');
 
+  // Verbesserte PeerJS-Konfiguration
+  const peerConfig = {
+    debug: 2, // Aktiviere Debug-Logs
+    config: {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    }
+  };
+
   if (isHost) {
     // HOST: Erstelle Peer mit Lobby-Code als ID
-    peer = new Peer(lobbyCode, {
-      debug: 0
-    });
+    console.log('🏠 Erstelle Host-Peer mit Code:', lobbyCode);
+    showNotification('Erstelle Lobby...', 'info', 2000);
+
+    peer = new Peer(lobbyCode, peerConfig);
 
     peer.on('open', function(id) {
-      console.log('✅ Host-Peer erstellt mit ID:', id);
-      showNotification('✅ Lobby bereit!', 'success', 2000);
+      console.log('✅ Host-Peer bereit mit ID:', id);
+      console.log('📡 Host wartet auf Verbindungen...');
+      showNotification('✅ Lobby bereit! Code: ' + lobbyCode, 'success', 3000);
       displayHostInfo();
     });
 
     peer.on('connection', function(conn) {
       console.log('👤 Spieler verbindet sich:', conn.peer);
+      showNotification('Spieler verbindet sich...', 'info', 2000);
       handleNewConnection(conn);
     });
 
     peer.on('error', function(err) {
-      console.error('❌ Peer Fehler:', err);
-      showNotification('Fehler: ' + err.type, 'error', 3000);
+      console.error('❌ Host Peer Fehler:', err);
+
+      if (err.type === 'unavailable-id') {
+        showNotification('⚠️ Lobby-Code bereits vergeben! Bitte neue Lobby erstellen.', 'error', 5000);
+        setTimeout(() => {
+          localStorage.removeItem('lobbyCode');
+          localStorage.removeItem('isHost');
+          window.location.href = 'index.html';
+        }, 5000);
+      } else if (err.type === 'network') {
+        showNotification('❌ Netzwerkfehler. Prüfe deine Internetverbindung.', 'error', 5000);
+      } else if (err.type === 'server-error') {
+        showNotification('❌ Server-Fehler. Bitte versuche es erneut.', 'error', 5000);
+      } else {
+        showNotification('Fehler: ' + err.type, 'error', 3000);
+      }
+    });
+
+    peer.on('disconnected', function() {
+      console.warn('⚠️ Host-Peer getrennt');
+      showNotification('⚠️ Verbindung unterbrochen', 'error', 3000);
     });
 
   } else {
     // SPIELER: Erstelle Peer und verbinde zum Host
-    peer = new Peer({
-      debug: 0
-    });
+    console.log('👤 Erstelle Spieler-Peer...');
+    showNotification('Verbinde zur Lobby...', 'info', 2000);
+
+    peer = new Peer(peerConfig);
 
     peer.on('open', function(id) {
       console.log('✅ Spieler-Peer erstellt mit ID:', id);
-      connectToHost();
+      console.log('🔗 Versuche Verbindung zum Host:', lobbyCode);
+
+      // Warte kurz, dann verbinde zum Host
+      setTimeout(() => {
+        connectToHost();
+      }, 1000);
     });
 
     peer.on('error', function(err) {
-      console.error('❌ Peer Fehler:', err);
-      showNotification('Verbindung fehlgeschlagen', 'error', 3000);
+      console.error('❌ Spieler Peer Fehler:', err);
+      showNotification('❌ Verbindung fehlgeschlagen: ' + err.type, 'error', 4000);
+
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 4000);
+    });
+
+    peer.on('disconnected', function() {
+      console.warn('⚠️ Spieler-Peer getrennt');
+      showNotification('⚠️ Verbindung unterbrochen', 'error', 3000);
     });
   }
 }
@@ -92,6 +140,7 @@ function initPeerConnection() {
 // HOST: NEUE SPIELER-VERBINDUNG
 // ========================================
 function handleNewConnection(conn) {
+  console.log('🔗 Verarbeite neue Verbindung von:', conn.peer);
   connections.push(conn);
 
   conn.on('open', function() {
@@ -115,7 +164,7 @@ function handleNewConnection(conn) {
   });
 
   conn.on('data', function(data) {
-    console.log('📥 Daten empfangen:', data);
+    console.log('📥 Daten vom Spieler empfangen:', data);
 
     if (data.type === 'join') {
       // Spieler möchte beitreten
@@ -141,7 +190,7 @@ function handleNewConnection(conn) {
   });
 
   conn.on('error', function(err) {
-    console.error('❌ Verbindungsfehler:', err);
+    console.error('❌ Verbindungsfehler mit Spieler:', err);
   });
 }
 
@@ -149,57 +198,86 @@ function handleNewConnection(conn) {
 // SPIELER: ZUM HOST VERBINDEN
 // ========================================
 function connectToHost() {
-  console.log('🔗 Verbinde zum Host mit Code:', lobbyCode);
-  showNotification('Verbinde...', 'info', 1500);
+  console.log('🔗 Starte Verbindung zum Host mit Code:', lobbyCode);
 
-  const conn = peer.connect(lobbyCode, {
-    reliable: true
-  });
+  try {
+    const conn = peer.connect(lobbyCode, {
+      reliable: true,
+      serialization: 'json'
+    });
 
-  connections.push(conn);
+    if (!conn) {
+      console.error('❌ Konnte Verbindung nicht erstellen');
+      showNotification('❌ Lobby nicht gefunden!', 'error', 4000);
+      setTimeout(() => window.location.href = 'index.html', 4000);
+      return;
+    }
 
-  conn.on('open', function() {
-    console.log('✅ Mit Host verbunden!');
-    showNotification('✅ Verbunden!', 'success', 1500);
+    connections.push(conn);
 
-    // Sende Join-Request
-    conn.send({
-      type: 'join',
-      player: {
-        id: peer.id,
-        name: currentUser.global_name || currentUser.username,
-        avatar: getUserAvatar(currentUser),
-        score: 0
+    // Timeout wenn Verbindung zu lange dauert
+    const connectionTimeout = setTimeout(() => {
+      if (!conn.open) {
+        console.error('❌ Verbindungs-Timeout');
+        showNotification('❌ Lobby nicht gefunden! Timeout.', 'error', 4000);
+        setTimeout(() => window.location.href = 'index.html', 4000);
+      }
+    }, 10000); // 10 Sekunden Timeout
+
+    conn.on('open', function() {
+      clearTimeout(connectionTimeout);
+      console.log('✅ Mit Host verbunden!');
+      showNotification('✅ Verbunden!', 'success', 2000);
+
+      // Sende Join-Request
+      const joinData = {
+        type: 'join',
+        player: {
+          id: peer.id,
+          name: currentUser.global_name || currentUser.username,
+          avatar: getUserAvatar(currentUser),
+          score: 0
+        }
+      };
+
+      console.log('📤 Sende Join-Request:', joinData);
+      conn.send(joinData);
+    });
+
+    conn.on('data', function(data) {
+      console.log('📥 Daten vom Host:', data);
+
+      if (data.type === 'host-info') {
+        // Zeige Host-Info
+        displayHostInfo(data.host);
+      } else if (data.type === 'player-list') {
+        // Aktualisiere Spielerliste
+        updatePlayerList(data.players);
+      } else if (data.type === 'start-quiz') {
+        // Quiz wird gestartet
+        startQuiz();
       }
     });
-  });
 
-  conn.on('data', function(data) {
-    console.log('📥 Daten vom Host:', data);
+    conn.on('close', function() {
+      clearTimeout(connectionTimeout);
+      console.log('❌ Verbindung zum Host verloren');
+      showNotification('❌ Verbindung zum Host verloren', 'error', 3000);
+      setTimeout(() => window.location.href = 'index.html', 3000);
+    });
 
-    if (data.type === 'host-info') {
-      // Zeige Host-Info
-      displayHostInfo(data.host);
-    } else if (data.type === 'player-list') {
-      // Aktualisiere Spielerliste
-      updatePlayerList(data.players);
-    } else if (data.type === 'start-quiz') {
-      // Quiz wird gestartet
-      startQuiz();
-    }
-  });
+    conn.on('error', function(err) {
+      clearTimeout(connectionTimeout);
+      console.error('❌ Verbindungsfehler:', err);
+      showNotification('❌ Lobby nicht gefunden! Code falsch?', 'error', 4000);
+      setTimeout(() => window.location.href = 'index.html', 4000);
+    });
 
-  conn.on('close', function() {
-    console.log('❌ Verbindung zum Host verloren');
-    showNotification('❌ Verbindung verloren', 'error', 3000);
-    setTimeout(() => window.location.href = 'index.html', 3000);
-  });
-
-  conn.on('error', function(err) {
-    console.error('❌ Verbindungsfehler:', err);
-    showNotification('❌ Lobby nicht gefunden!', 'error', 3000);
-    setTimeout(() => window.location.href = 'index.html', 3000);
-  });
+  } catch (error) {
+    console.error('❌ Fehler beim Verbinden:', error);
+    showNotification('❌ Verbindungsfehler!', 'error', 4000);
+    setTimeout(() => window.location.href = 'index.html', 4000);
+  }
 }
 
 // ========================================
@@ -210,6 +288,8 @@ function broadcastPlayerList() {
     type: 'player-list',
     players: players
   };
+
+  console.log('📡 Broadcast Spielerliste an', connections.length, 'Spieler');
 
   connections.forEach(conn => {
     if (conn.open) {
@@ -236,6 +316,7 @@ function removePlayer(peerId) {
 // SPIELERLISTE AKTUALISIEREN
 // ========================================
 function updatePlayerList(newPlayers) {
+  console.log('🔄 Aktualisiere Spielerliste:', newPlayers);
   players = newPlayers;
   const container = document.getElementById('players-container');
   container.innerHTML = '';
@@ -256,6 +337,7 @@ function addPlayerToDOM(player) {
     <span class="player-score">${player.score} Punkte</span>
   `;
   container.appendChild(card);
+  console.log('➕ Spieler zur DOM hinzugefügt:', player.name);
 }
 
 // ========================================
@@ -265,6 +347,7 @@ function loadCurrentUser() {
   const storedUser = localStorage.getItem('discordUser');
   if (storedUser) {
     currentUser = JSON.parse(storedUser);
+    console.log('👤 User geladen:', currentUser.username);
   } else {
     // Fallback für Test ohne Discord
     currentUser = {
@@ -274,6 +357,7 @@ function loadCurrentUser() {
       discriminator: '0000',
       avatar: null
     };
+    console.log('👤 Fallback User erstellt');
   }
 }
 
@@ -286,10 +370,12 @@ function displayHostInfo(hostData) {
 
   if (hostData) {
     // Spieler: Zeige Host-Daten vom Server
+    console.log('👑 Zeige Host-Info:', hostData.name);
     hostAvatar.src = hostData.avatar;
     hostName.textContent = hostData.name;
   } else if (currentUser) {
     // Host: Zeige eigene Daten
+    console.log('👑 Zeige eigene Host-Info');
     hostAvatar.src = getUserAvatar(currentUser);
     hostName.textContent = currentUser.global_name || currentUser.username;
   }
@@ -335,6 +421,7 @@ function setupEventListeners() {
   const startBtn = document.getElementById('start-quiz-btn');
   if (startBtn && isHost) {
     startBtn.addEventListener('click', function() {
+      console.log('🎮 Quiz wird gestartet...');
       // Sende Start-Signal an alle Spieler
       connections.forEach(conn => {
         if (conn.open) {
@@ -362,6 +449,8 @@ function setupEventListeners() {
 function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
+  console.log('🚪 Verlasse Lobby...');
+
   // Schließe alle Verbindungen
   connections.forEach(conn => {
     if (conn.open) conn.close();
@@ -383,8 +472,9 @@ function leaveLobby() {
 // ========================================
 function startQuiz() {
   showNotification('Quiz startet! 🎮', 'success', 2000);
+  console.log('🎮 Quiz gestartet mit', (players.length + 1), 'Spielern');
   setTimeout(() => {
-    alert('Quiz startet!\n\nSpieler: ' + (players.length + 1));
+    alert('Quiz startet!\n\nSpieler: ' + (players.length + 1) + '\n\n(Quiz-Funktionalität wird noch implementiert)');
   }, 1000);
 }
 
@@ -452,5 +542,5 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-console.log('✅ P2P Lobby System geladen!');
+console.log('✅ P2P Lobby System mit Debug-Modus geladen!');
 
