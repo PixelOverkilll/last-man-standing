@@ -1,5 +1,5 @@
 // ========================================
-// LOBBY MIT PEER-TO-PEER HOSTING - OPTIMIERT
+// LOBBY MIT PEER-TO-PEER HOSTING - OPTIMIERT & SCHNELL
 // ========================================
 
 console.log('🎮 P2P Lobby lädt...');
@@ -11,6 +11,8 @@ let players = [];
 let peer = null;
 let connections = [];
 let hostInfo = null;
+let retryCount = 0;
+const MAX_RETRIES = 3;
 
 // ========================================
 // INITIALISIERUNG
@@ -35,26 +37,65 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// PEER-TO-PEER VERBINDUNG - SCHNELLER
+// PEER-TO-PEER VERBINDUNG - SCHNELLER & ZUVERLÄSSIGER
 // ========================================
 function initPeerConnection() {
-  console.log('🌐 Initialisiere Peer-Verbindung...');
+  console.log('🌐 Initialisiere Peer-Verbindung... (Versuch ' + (retryCount + 1) + ')');
+
+  // Optimierte ICE-Server-Konfiguration mit mehreren STUN/TURN-Servern
+  const iceServers = [
+    // Google STUN-Server (schnell und zuverlässig)
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Öffentliche TURN-Server als Fallback (für NAT/Firewall)
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ];
+
+  const peerConfig = {
+    debug: 0,
+    config: {
+      iceServers: iceServers,
+      iceTransportPolicy: 'all', // Versuche alle Verbindungstypen
+      iceCandidatePoolSize: 10, // Mehr ICE-Kandidaten für schnellere Verbindung
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require'
+    }
+  };
 
   if (isHost) {
     console.log('🏠 Starte als HOST');
     showNotification('Erstelle Lobby...', 'info', 1500);
 
-    peer = new Peer(lobbyCode, {
-      debug: 0,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+    peer = new Peer(lobbyCode, peerConfig);
+
+    // Connection Timeout für Host - verkürzt auf 5 Sekunden
+    const hostTimeout = setTimeout(() => {
+      if (peer && !peer.open) {
+        console.warn('⚠️ Host-Verbindung dauert lange...');
+        showNotification('Verbindung wird aufgebaut...', 'info', 2000);
       }
-    });
+    }, 5000);
 
     peer.on('open', function(id) {
+      clearTimeout(hostTimeout);
+      retryCount = 0; // Reset retry counter
       console.log('✅ Host-Lobby erstellt mit ID:', id);
       showNotification('✅ Lobby bereit! ' + lobbyCode, 'success', 2000);
     });
@@ -65,32 +106,73 @@ function initPeerConnection() {
     });
 
     peer.on('error', function(err) {
+      clearTimeout(hostTimeout);
       console.error('❌ Peer Fehler:', err);
-      showNotification('Fehler: ' + err.type, 'error');
+
+      // Besseres Fehlerhandling mit Retry
+      if (err.type === 'unavailable-id') {
+        showNotification('Lobby-Code bereits vergeben', 'error', 3000);
+        setTimeout(() => {
+          localStorage.removeItem('lobbyCode');
+          window.location.href = 'index.html';
+        }, 3000);
+      } else if (err.type === 'network' || err.type === 'server-error') {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          showNotification('Netzwerkfehler - Versuche erneut... (' + retryCount + '/' + MAX_RETRIES + ')', 'error', 2000);
+          setTimeout(() => {
+            if (peer) peer.destroy();
+            initPeerConnection();
+          }, 2000);
+        } else {
+          showNotification('Verbindung nach ' + MAX_RETRIES + ' Versuchen fehlgeschlagen', 'error', 4000);
+          setTimeout(() => window.location.href = 'index.html', 4000);
+        }
+      } else {
+        showNotification('Fehler: ' + err.type, 'error');
+      }
     });
 
   } else {
     console.log('👤 Starte als SPIELER');
     showNotification('Verbinde...', 'info', 1500);
 
-    peer = new Peer({
-      debug: 0,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+    peer = new Peer(peerConfig);
+
+    // Connection Timeout für Spieler - verkürzt auf 5 Sekunden
+    const playerTimeout = setTimeout(() => {
+      if (peer && !peer.open) {
+        console.warn('⚠️ Spieler-Verbindung dauert lange...');
+        showNotification('Verbindung wird aufgebaut...', 'info', 2000);
       }
-    });
+    }, 5000);
 
     peer.on('open', function(id) {
+      clearTimeout(playerTimeout);
+      retryCount = 0; // Reset retry counter
       console.log('✅ Spieler-Peer erstellt mit ID:', id);
       connectToHost();
     });
 
     peer.on('error', function(err) {
+      clearTimeout(playerTimeout);
       console.error('❌ Peer Fehler:', err);
-      showNotification('Verbindung fehlgeschlagen', 'error');
+
+      if (err.type === 'network' || err.type === 'server-error') {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          showNotification('Netzwerkfehler - Versuche erneut... (' + retryCount + '/' + MAX_RETRIES + ')', 'error', 2000);
+          setTimeout(() => {
+            if (peer) peer.destroy();
+            initPeerConnection();
+          }, 2000);
+        } else {
+          showNotification('Verbindung nach ' + MAX_RETRIES + ' Versuchen fehlgeschlagen', 'error', 4000);
+          setTimeout(() => window.location.href = 'index.html', 4000);
+        }
+      } else {
+        showNotification('Verbindung fehlgeschlagen', 'error');
+      }
     });
   }
 }
@@ -101,7 +183,16 @@ function initPeerConnection() {
 function handleNewConnection(conn) {
   connections.push(conn);
 
+  // Timeout für Verbindungsaufbau
+  const connTimeout = setTimeout(() => {
+    if (!conn.open) {
+      console.warn('⚠️ Spieler-Verbindung timeout');
+      conn.close();
+    }
+  }, 10000); // 10 Sekunden Timeout
+
   conn.on('open', function() {
+    clearTimeout(connTimeout);
     console.log('✅ Spieler verbunden:', conn.peer);
 
     const storedUser = localStorage.getItem('discordUser');
@@ -132,9 +223,15 @@ function handleNewConnection(conn) {
   });
 
   conn.on('close', function() {
+    clearTimeout(connTimeout);
     console.log('👋 Spieler getrennt:', conn.peer);
     removePlayer(conn.peer);
     broadcastPlayerList();
+  });
+
+  conn.on('error', function(err) {
+    clearTimeout(connTimeout);
+    console.error('❌ Connection Error:', err);
   });
 }
 
@@ -146,17 +243,32 @@ function connectToHost() {
 
   const conn = peer.connect(lobbyCode, {
     reliable: true,
-    serialization: 'json'
+    serialization: 'json',
+    metadata: { timestamp: Date.now() }
   });
 
+  let connectionEstablished = false;
+
+  // Timeout für Verbindungsaufbau - verkürzt auf 10 Sekunden
   const timeout = setTimeout(() => {
-    if (!conn.open) {
+    if (!connectionEstablished) {
+      console.error('❌ Verbindungstimeout');
+      showNotification('❌ Verbindung timeout - Lobby nicht erreichbar', 'error', 3000);
+      conn.close();
+      setTimeout(() => window.location.href = 'index.html', 3000);
+    }
+  }, 10000);
+
+  const progressTimeout = setTimeout(() => {
+    if (!connectionEstablished) {
       showNotification('Verbindung wird aufgebaut...', 'info', 2000);
     }
-  }, 1500);
+  }, 2000);
 
   conn.on('open', function() {
+    connectionEstablished = true;
     clearTimeout(timeout);
+    clearTimeout(progressTimeout);
     console.log('✅ Mit Host verbunden!');
     showNotification('✅ Verbunden!', 'success', 1500);
 
@@ -190,8 +302,20 @@ function connectToHost() {
 
   conn.on('error', function(err) {
     clearTimeout(timeout);
+    clearTimeout(progressTimeout);
     console.error('❌ Verbindungsfehler:', err);
-    showNotification('❌ Lobby nicht gefunden', 'error');
+    showNotification('❌ Lobby nicht gefunden', 'error', 3000);
+    setTimeout(() => window.location.href = 'index.html', 3000);
+  });
+
+  conn.on('close', function() {
+    if (!connectionEstablished) {
+      clearTimeout(timeout);
+      clearTimeout(progressTimeout);
+      console.error('❌ Verbindung geschlossen bevor sie aufgebaut wurde');
+      showNotification('❌ Lobby nicht gefunden', 'error', 3000);
+      setTimeout(() => window.location.href = 'index.html', 3000);
+    }
   });
 
   connections.push(conn);
@@ -235,7 +359,13 @@ function updatePlayerList(newPlayers) {
 function broadcastPlayerList() {
   const message = { type: 'player-list', players: players };
   connections.forEach(conn => {
-    if (conn.open) conn.send(message);
+    if (conn.open) {
+      try {
+        conn.send(message);
+      } catch (err) {
+        console.error('❌ Fehler beim Senden:', err);
+      }
+    }
   });
 }
 
@@ -366,7 +496,13 @@ function setupEventListeners() {
   if (startBtn && isHost) {
     startBtn.addEventListener('click', function() {
       connections.forEach(conn => {
-        if (conn.open) conn.send({ type: 'start-quiz' });
+        if (conn.open) {
+          try {
+            conn.send({ type: 'start-quiz' });
+          } catch (err) {
+            console.error('❌ Fehler beim Senden:', err);
+          }
+        }
       });
       startQuiz();
     });
@@ -391,7 +527,13 @@ function leaveLobby() {
 
   if (peer) {
     connections.forEach(conn => {
-      if (conn.open) conn.close();
+      if (conn.open) {
+        try {
+          conn.close();
+        } catch (err) {
+          console.error('❌ Fehler beim Schließen:', err);
+        }
+      }
     });
     peer.destroy();
   }
