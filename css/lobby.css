@@ -378,24 +378,27 @@ body {
   }
 
   .host-label {
-    min-width: 280px;
-    font-size: 1rem;
-    padding: 10px 24px;
+    min-width: 240px;
+    font-size: 0.9rem;
+    padding: 8px 20px;
+    letter-spacing: 2px;
   }
 
   .host-card {
-    min-width: 280px;
-    padding: 20px 25px;
+    min-width: 240px;
+    padding: 15px 20px;
+    gap: 15px;
   }
 
   .host-avatar {
-    width: 90px;
-    height: 90px;
+    width: 70px;
+    height: 70px;
+    border: 3px solid #7c3aed;
   }
 
   .host-name {
-    font-size: 1.15rem;
-    padding: 12px 25px;
+    font-size: 1rem;
+    padding: 8px 20px;
   }
 
   .fullscreen-btn {
@@ -403,23 +406,291 @@ body {
     right: 10px;
     width: 45px;
     height: 45px;
+    font-size: 1.2rem;
+  }
+
+  .leave-lobby-btn {
+    top: 10px;
+    right: 65px;
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
   }
 
   .quiz-container {
+    padding: 20px 10px;
+  }
+
+  .quiz-title {
+    font-size: clamp(1.8rem, 6vw, 2.5rem);
+    margin-bottom: 15px;
+  }
+
+  .lobby-code-display {
+    padding: 10px 20px;
+  }
+
+  .code-label {
+    font-size: 0.8rem;
+  }
+
+  .code-value {
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  .question-area {
+    padding: 25px 20px;
+  }
+
+  .waiting-message h2 {
+    font-size: 1.3rem;
+  }
+
+  .waiting-message p {
+    font-size: 0.9rem;
+  }
+
+  .btn {
+    padding: 12px 30px;
+    font-size: 1rem;
+  }
+
+  .btn-icon {
+    font-size: 1.2rem;
+  }
+
+  .players-area {
+    padding: 15px 10px;
+  }
+
+  .player-card {
+    min-width: 110px;
+    max-width: 140px;
+    padding: 15px 12px;
+  }
+
+  .player-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .player-name {
+    font-size: 0.85rem;
+  }
+
+  .player-score {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+  }
+}
+
+/* Tablet Anpassungen */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .host-info {
+    top: 15px;
+    left: 15px;
+  }
+
+  .host-label {
+    min-width: 320px;
+    font-size: 1rem;
+    padding: 10px 26px;
+  }
+
+  .host-card {
+    min-width: 320px;
+    padding: 25px 30px;
+  }
+
+  .host-avatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .host-name {
+    font-size: 1.25rem;
+    padding: 12px 28px;
+  }
+
+  .quiz-container {
+    max-width: 800px;
+  }
+
+  .player-card {
+    min-width: 140px;
+    max-width: 160px;
+  }
+}
+
+/* Sehr kleine Mobile Geräte */
+@media (max-width: 480px) {
+  .host-info {
+    top: 5px;
+    left: 5px;
+  }
+
+  .host-label {
+    min-width: 200px;
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    letter-spacing: 1px;
+  }
+
+  .host-card {
+    min-width: 200px;
+    padding: 12px 15px;
+    gap: 12px;
+  }
+
+  .host-avatar {
+    width: 60px;
+    height: 60px;
+  }
+
+  .host-name {
+    font-size: 0.9rem;
+    padding: 6px 15px;
+  }
+
+  .fullscreen-btn,
+  .leave-lobby-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .leave-lobby-btn {
+    right: 55px;
+  }
+
+  .quiz-title {
+    font-size: 1.5rem;
+  }
+
+  .question-area {
     padding: 20px 15px;
   }
 
   .players-area {
-    padding: 20px 15px;
+    padding: 10px 5px;
+  }
+
+  .players-container {
+    gap: 15px;
   }
 
   .player-card {
-    min-width: 130px;
-    padding: 20px 15px;
+    min-width: 100px;
+    max-width: 120px;
+    padding: 12px 10px;
+    gap: 10px;
   }
 
   .player-avatar {
-    width: 75px;
-    height: 75px;
+    width: 55px;
+    height: 55px;
+  }
+
+  .player-name {
+    font-size: 0.8rem;
+  }
+
+  .player-score {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+  }
+}
+
+/* Landscape Modus für Mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  body {
+    overflow-y: auto;
+  }
+
+  .host-info {
+    position: fixed;
+    top: 5px;
+    left: 5px;
+  }
+
+  .host-label {
+    padding: 6px 16px;
+    font-size: 0.8rem;
+  }
+
+  .host-card {
+    padding: 10px 15px;
+  }
+
+  .host-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .quiz-container {
+    padding: 10px;
+    min-height: auto;
+  }
+
+  .players-area {
+    position: relative;
+    padding: 10px;
+    max-height: none;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1920px) {
+  .host-info {
+    top: 30px;
+    left: 30px;
+  }
+
+  .host-label {
+    min-width: 420px;
+    font-size: 1.2rem;
+    padding: 14px 35px;
+  }
+
+  .host-card {
+    min-width: 420px;
+    padding: 35px 40px;
+  }
+
+  .host-avatar {
+    width: 140px;
+    height: 140px;
+  }
+
+  .host-name {
+    font-size: 1.6rem;
+    padding: 18px 40px;
+  }
+
+  .quiz-container {
+    max-width: 1100px;
+  }
+
+  .quiz-title {
+    font-size: 3.5rem;
+  }
+
+  .question-area {
+    max-width: 800px;
+  }
+
+  .players-container {
+    max-width: 1600px;
+  }
+
+  .player-card {
+    min-width: 160px;
+    max-width: 200px;
+  }
+
+  .player-avatar {
+    width: 85px;
+    height: 85px;
   }
 }
