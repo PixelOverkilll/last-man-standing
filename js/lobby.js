@@ -400,6 +400,8 @@ function checkDiscordVoiceState() {
 }
 
 function startVoiceStatePolling(currentUserId) {
+  let botOfflineWarningShown = false;
+
   // Prüfe Voice-States alle 2 Sekunden
   setInterval(async () => {
     try {
@@ -408,18 +410,64 @@ function startVoiceStatePolling(currentUserId) {
 
       if (!response.ok) {
         console.error('Bot API nicht erreichbar');
+
+        // Zeige Warnung wenn Bot offline ist
+        if (!botOfflineWarningShown) {
+          updateBotOfflineStatus();
+          botOfflineWarningShown = true;
+        }
         return;
       }
 
       const voiceStates = await response.json();
+
+      // Bot ist online, verstecke Warnung
+      if (botOfflineWarningShown) {
+        botOfflineWarningShown = false;
+      }
 
       // Update voice states für alle User
       updateAllVoiceStates(voiceStates, currentUserId);
 
     } catch (error) {
       console.error('Fehler beim Abrufen der Voice-States:', error);
+
+      // Zeige Warnung wenn Bot nicht erreichbar ist
+      if (!botOfflineWarningShown) {
+        updateBotOfflineStatus();
+        botOfflineWarningShown = true;
+      }
     }
   }, 2000); // Alle 2 Sekunden aktualisieren
+}
+
+function updateBotOfflineStatus() {
+  console.warn('⚠️ Discord Bot ist nicht erreichbar - Voice Status nicht verfügbar');
+
+  // Update Debug Info
+  const debugBotStatus = document.getElementById('debug-bot-status');
+  if (debugBotStatus) {
+    debugBotStatus.textContent = '❌ Offline';
+    debugBotStatus.style.color = '#ef4444';
+  }
+
+  const debugInVoice = document.getElementById('debug-in-voice');
+  if (debugInVoice) {
+    debugInVoice.textContent = '⚠️ Bot offline';
+    debugInVoice.style.color = '#f59e0b';
+  }
+
+  const debugMuted = document.getElementById('debug-muted');
+  if (debugMuted) {
+    debugMuted.textContent = '⚠️ Bot offline';
+    debugMuted.style.color = '#f59e0b';
+  }
+
+  const debugSpeaking = document.getElementById('debug-speaking');
+  if (debugSpeaking) {
+    debugSpeaking.textContent = '⚠️ Bot offline';
+    debugSpeaking.style.color = '#f59e0b';
+  }
 }
 
 function updateAllVoiceStates(voiceStates, currentUserId) {
