@@ -626,10 +626,10 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
     // Update visual indicator based on role
     const isHost = localStorage.getItem('isHost') === 'true';
     if (isHost) {
-      updateHostVoiceStatus(myState.speaking);
+      updateHostVoiceStatus(myState.speaking, myState.muted);
     } else {
       // Update player's own card in the players list
-      updatePlayerVoiceStatus(currentUserId, true, myState.speaking);
+      updatePlayerVoiceStatus(currentUserId, true, myState.speaking, myState.muted);
     }
   } else {
     console.log('❌ Ich bin nicht im Voice gefunden');
@@ -644,7 +644,7 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
 
     const isHost = localStorage.getItem('isHost') === 'true';
     if (isHost) {
-      updateHostVoiceStatus(false);
+      updateHostVoiceStatus(false, false);
     }
   }
 
@@ -652,9 +652,9 @@ function updateAllVoiceStates(voiceStates, currentUserId) {
   players.forEach(player => {
     const playerState = voiceStates.find(state => state.userId === player.id);
     if (playerState) {
-      updatePlayerVoiceStatus(player.id, true, playerState.speaking);
+      updatePlayerVoiceStatus(player.id, true, playerState.speaking, playerState.muted);
     } else {
-      updatePlayerVoiceStatus(player.id, false, false);
+      updatePlayerVoiceStatus(player.id, false, false, false);
     }
   });
 }
