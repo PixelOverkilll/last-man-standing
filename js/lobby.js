@@ -138,25 +138,54 @@ function applyPlayerColor(playerCard, color) {
 }
 
 // ========================================
-// INITIALISIERUNG
+// INITIALISIERUNG - VERBESSERT
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
   console.log('✅ DOM geladen');
 
   const urlParams = new URLSearchParams(window.location.search);
   lobbyCode = urlParams.get('code') || localStorage.getItem('lobbyCode');
-  isHost = localStorage.getItem('isHost') === 'true';
 
-  console.log('🔍 Lobby Code:', lobbyCode);
-  console.log('🔍 Ist Host:', isHost);
+  // VERBESSERTE HOST-ERKENNUNG
+  const storedLobbyCode = localStorage.getItem('lobbyCode');
+  const storedIsHost = localStorage.getItem('isHost');
+
+  console.log('🔍 URL Lobby Code:', urlParams.get('code'));
+  console.log('🔍 Stored Lobby Code:', storedLobbyCode);
+  console.log('🔍 Stored isHost:', storedIsHost);
+
+  // Prüfe ob der URL-Code mit dem gespeicherten übereinstimmt
+  if (lobbyCode && storedLobbyCode === lobbyCode && storedIsHost === 'true') {
+    isHost = true;
+    console.log('✅ Host erkannt! (Code stimmt überein)');
+  } else if (storedIsHost === 'true' && !urlParams.get('code')) {
+    // Falls kein Code in URL, aber isHost gespeichert ist
+    isHost = true;
+    lobbyCode = storedLobbyCode;
+    console.log('✅ Host erkannt! (Aus localStorage)');
+  } else {
+    isHost = false;
+    console.log('👤 Als Spieler beigetreten');
+  }
+
+  console.log('🔍 Finale Lobby Code:', lobbyCode);
+  console.log('🔍 Finale isHost:', isHost);
 
   if (!lobbyCode) {
+    console.error('❌ Kein Lobby-Code gefunden!');
     showNotification('❌ Kein Lobby-Code gefunden!', 'error', 3000);
     setTimeout(() => window.location.href = 'index.html', 3000);
     return;
   }
 
-  loadCurrentUser();
+  // Lade User und initialisiere
+  if (!loadCurrentUser()) {
+    console.error('❌ Kein User gefunden - zurück zur Startseite');
+    showNotification('❌ Bitte melde dich zuerst an!', 'error', 3000);
+    setTimeout(() => window.location.href = 'index.html', 3000);
+    return;
+  }
+
   initUI();
   setupEventListeners();
   setTimeout(() => initPeerConnection(), 300);
@@ -167,13 +196,15 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 function initPeerConnection() {
   console.log('🌐 Initialisiere P2P...');
+  console.log('🔍 isHost:', isHost, '| Code:', lobbyCode);
 
   const peerConfig = {
     debug: 2,
     config: {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' }
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' }
       ]
     }
   };
@@ -186,6 +217,7 @@ function initPeerConnection() {
 
     peer.on('open', function(id) {
       console.log('✅ Host-Peer bereit mit ID:', id);
+      console.log('📡 Host wartet auf Verbindungen...');
       showNotification('✅ Lobby bereit! Code: ' + lobbyCode, 'success', 3000);
       displayHostInfo();
     });
@@ -399,21 +431,18 @@ function addPlayerToDOM(player) {
 }
 
 // ========================================
-// CURRENT USER LADEN
+// CURRENT USER LADEN - VERBESSERT
 // ========================================
 function loadCurrentUser() {
   const storedUser = localStorage.getItem('discordUser');
   if (storedUser) {
     currentUser = JSON.parse(storedUser);
-    console.log('👤 User geladen:', currentUser.username);
+    console.log('👤 User geladen:', currentUser.username || currentUser.global_name);
+    return true;
   } else {
-    currentUser = {
-      id: 'user_' + Date.now(),
-      username: 'TestUser',
-      global_name: 'Test User',
-      discriminator: '0000',
-      avatar: null
-    };
+    console.error('❌ Kein User im localStorage gefunden!');
+    currentUser = null;
+    return false;
   }
 }
 
@@ -424,10 +453,17 @@ function displayHostInfo(hostData) {
   const hostAvatar = document.getElementById('host-avatar');
   const hostName = document.getElementById('host-name');
 
+  if (!hostAvatar || !hostName) {
+    console.error('❌ Host-Elemente nicht gefunden!');
+    return;
+  }
+
   if (hostData) {
+    console.log('👑 Zeige Host-Info vom Server:', hostData.name);
     hostAvatar.src = hostData.avatar;
     hostName.textContent = hostData.name;
   } else if (currentUser) {
+    console.log('👑 Zeige eigene Host-Info');
     hostAvatar.src = getUserAvatar(currentUser);
     hostName.textContent = currentUser.global_name || currentUser.username;
   }
@@ -456,9 +492,11 @@ function initUI() {
   if (lobbyCodeDisplay) lobbyCodeDisplay.textContent = lobbyCode;
 
   if (isHost) {
+    console.log('🎮 UI als Host initialisiert');
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
     if (hostControls) hostControls.style.display = 'block';
   } else {
+    console.log('👤 UI als Spieler initialisiert');
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'none';
     if (hostControls) hostControls.style.display = 'none';
   }
@@ -574,5 +612,5 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-console.log('✅ P2P Lobby System mit Farbextraktion geladen!');
+console.log('✅ P2P Lobby System mit verbesserter Host-Erkennung geladen!');
 
