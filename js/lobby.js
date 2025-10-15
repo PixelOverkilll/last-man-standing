@@ -1,5 +1,5 @@
 // ========================================
-// LOBBY SYSTEM - NEU & EINFACH (OHNE P2P)
+// LOBBY SYSTEM - FUNKTIONIEREND MIT BROADCAST CHANNEL
 // ========================================
 
 console.log('🎮 Lobby System lädt...');
@@ -9,20 +9,7 @@ let isHost = false;
 let lobbyCode = '';
 let players = [];
 let currentUser = null;
-
-// Simulierte Lobby-Daten (später mit Backend ersetzen)
-const lobbyStorage = {
-  save: function(code, data) {
-    localStorage.setItem('lobby_' + code, JSON.stringify(data));
-  },
-  load: function(code) {
-    const data = localStorage.getItem('lobby_' + code);
-    return data ? JSON.parse(data) : null;
-  },
-  delete: function(code) {
-    localStorage.removeItem('lobby_' + code);
-  }
-};
+let broadcastChannel = null;
 
 // ========================================
 // INITIALISIERUNG
@@ -37,8 +24,17 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('🔍 Lobby Code:', lobbyCode);
   console.log('🔍 Ist Host:', isHost);
 
+  if (!lobbyCode) {
+    showNotification('❌ Kein Lobby-Code gefunden!', 'error', 3000);
+    setTimeout(() => window.location.href = 'index.html', 3000);
+    return;
+  }
+
   // Lade User-Daten
   loadCurrentUser();
+
+  // Setup Broadcast Channel für Tab-übergreifende Kommunikation
+  setupBroadcastChannel();
 
   // UI initialisieren
   initUI();
@@ -53,6 +49,29 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auto-Update alle 2 Sekunden
   setInterval(updateLobby, 2000);
 });
+
+// ========================================
+// BROADCAST CHANNEL SETUP
+// ========================================
+function setupBroadcastChannel() {
+  try {
+    broadcastChannel = new BroadcastChannel('lobby_' + lobbyCode);
+
+    broadcastChannel.onmessage = function(event) {
+      console.log('📡 Broadcast empfangen:', event.data);
+
+      if (event.data.type === 'lobby-update') {
+        handleLobbyUpdate(event.data.lobby);
+      } else if (event.data.type === 'player-joined') {
+        handlePlayerJoined(event.data.player);
+      } else if (event.data.type === 'player-left') {
+        handlePlayerLeft(event.data.playerId);
+      }
+    };
+  } catch (error) {
+    console.warn('⚠️ BroadcastChannel nicht verfügbar:', error);
+  }
+}
 
 // ========================================
 // CURRENT USER LADEN
@@ -92,11 +111,17 @@ function initializeAsHost() {
     createdAt: Date.now()
   };
 
-  // Speichere Lobby
-  lobbyStorage.save(lobbyCode, lobbyData);
+  // Speichere Lobby im localStorage
+  saveLobby(lobbyData);
 
   // Zeige Host-Info
   displayHostInfo(lobbyData.host);
+
+  // Broadcast Lobby-Creation
+  broadcastMessage({
+    type: 'lobby-update',
+    lobby: lobbyData
+  });
 
   showNotification('✅ Lobby bereit!', 'success', 2000);
 }
@@ -108,15 +133,36 @@ function joinAsPlayer() {
   console.log('👤 Trete Lobby bei als SPIELER');
   showNotification('Trete Lobby bei...', 'info', 1500);
 
-  // Lade Lobby-Daten
-  const lobbyData = lobbyStorage.load(lobbyCode);
+  // Versuche Lobby aus localStorage zu laden
+  let lobbyData = loadLobby();
 
   if (!lobbyData) {
-    showNotification('❌ Lobby nicht gefunden!', 'error', 3000);
-    setTimeout(() => window.location.href = 'index.html', 3000);
+    // Frage Host nach Lobby-Daten
+    console.log('🔍 Lobby nicht gefunden, frage Host...');
+
+    // Request Lobby vom Host
+    broadcastMessage({
+      type: 'request-lobby',
+      playerId: currentUser.id
+    });
+
+    // Warte auf Antwort
+    setTimeout(() => {
+      lobbyData = loadLobby();
+      if (!lobbyData) {
+        showNotification('❌ Lobby nicht gefunden! Erstelle zuerst eine Lobby.', 'error', 4000);
+        setTimeout(() => window.location.href = 'index.html', 4000);
+        return;
+      }
+      continueJoining(lobbyData);
+    }, 1000);
     return;
   }
 
+  continueJoining(lobbyData);
+}
+
+function continueJoining(lobbyData) {
   // Zeige Host-Info
   displayHostInfo(lobbyData.host);
 
@@ -133,7 +179,14 @@ function joinAsPlayer() {
   const existingPlayerIndex = lobbyData.players.findIndex(p => p.id === playerData.id);
   if (existingPlayerIndex === -1) {
     lobbyData.players.push(playerData);
-    lobbyStorage.save(lobbyCode, lobbyData);
+    saveLobby(lobbyData);
+
+    // Broadcast Player-Join
+    broadcastMessage({
+      type: 'player-joined',
+      player: playerData
+    });
+
     showNotification('✅ Lobby beigetreten!', 'success', 2000);
   } else {
     showNotification('✅ Willkommen zurück!', 'success', 2000);
@@ -143,10 +196,74 @@ function joinAsPlayer() {
 }
 
 // ========================================
+// LOBBY SPEICHERN/LADEN
+// ========================================
+function saveLobby(lobbyData) {
+  localStorage.setItem('lobby_' + lobbyCode, JSON.stringify(lobbyData));
+}
+
+function loadLobby() {
+  const data = localStorage.getItem('lobby_' + lobbyCode);
+  return data ? JSON.parse(data) : null;
+}
+
+function deleteLobby() {
+  localStorage.removeItem('lobby_' + lobbyCode);
+}
+
+// ========================================
+// BROADCAST MESSAGES
+// ========================================
+function broadcastMessage(message) {
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage(message);
+    } catch (error) {
+      console.warn('⚠️ Broadcast fehlgeschlagen:', error);
+    }
+  }
+}
+
+// ========================================
+// HANDLE BROADCAST MESSAGES
+// ========================================
+function handleLobbyUpdate(lobby) {
+  saveLobby(lobby);
+  displayHostInfo(lobby.host);
+  updatePlayerList(lobby.players);
+}
+
+function handlePlayerJoined(player) {
+  const lobbyData = loadLobby();
+  if (lobbyData) {
+    const exists = lobbyData.players.find(p => p.id === player.id);
+    if (!exists) {
+      lobbyData.players.push(player);
+      saveLobby(lobbyData);
+      updatePlayerList(lobbyData.players);
+      showNotification(player.name + ' ist beigetreten! 🎉', 'success', 2000);
+    }
+  }
+}
+
+function handlePlayerLeft(playerId) {
+  const lobbyData = loadLobby();
+  if (lobbyData) {
+    const player = lobbyData.players.find(p => p.id === playerId);
+    if (player) {
+      lobbyData.players = lobbyData.players.filter(p => p.id !== playerId);
+      saveLobby(lobbyData);
+      updatePlayerList(lobbyData.players);
+      showNotification(player.name + ' hat verlassen', 'info', 2000);
+    }
+  }
+}
+
+// ========================================
 // LOBBY AKTUALISIEREN
 // ========================================
 function updateLobby() {
-  const lobbyData = lobbyStorage.load(lobbyCode);
+  const lobbyData = loadLobby();
 
   if (!lobbyData) {
     console.warn('⚠️ Lobby nicht mehr vorhanden');
@@ -155,6 +272,14 @@ function updateLobby() {
 
   // Aktualisiere Spielerliste
   updatePlayerList(lobbyData.players);
+
+  // Host sendet regelmäßig Updates
+  if (isHost) {
+    broadcastMessage({
+      type: 'lobby-update',
+      lobby: lobbyData
+    });
+  }
 }
 
 // ========================================
@@ -248,6 +373,16 @@ function setupEventListeners() {
   if (leaveLobbyBtn) {
     leaveLobbyBtn.addEventListener('click', leaveLobby);
   }
+
+  // Cleanup bei Tab-Schließung
+  window.addEventListener('beforeunload', function() {
+    if (!isHost) {
+      broadcastMessage({
+        type: 'player-left',
+        playerId: currentUser.id
+      });
+    }
+  });
 }
 
 // ========================================
@@ -256,21 +391,34 @@ function setupEventListeners() {
 function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
+  // Broadcast dass Spieler verlässt
+  broadcastMessage({
+    type: 'player-left',
+    playerId: currentUser.id
+  });
+
   // Entferne Spieler aus Lobby
-  const lobbyData = lobbyStorage.load(lobbyCode);
+  const lobbyData = loadLobby();
   if (lobbyData) {
     if (isHost) {
       // Host verlässt = Lobby wird gelöscht
-      lobbyStorage.delete(lobbyCode);
+      deleteLobby();
+      broadcastMessage({
+        type: 'lobby-deleted'
+      });
     } else {
       // Spieler entfernen
       lobbyData.players = lobbyData.players.filter(p => p.id !== currentUser.id);
-      lobbyStorage.save(lobbyCode, lobbyData);
+      saveLobby(lobbyData);
     }
   }
 
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
+
+  if (broadcastChannel) {
+    broadcastChannel.close();
+  }
 
   showNotification('Lobby verlassen', 'info', 500);
   setTimeout(() => window.location.href = 'index.html', 500);
