@@ -38,14 +38,30 @@ document.addEventListener('DOMContentLoaded', function() {
   const urlParams = new URLSearchParams(window.location.search);
   const urlLobbyCode = urlParams.get('code');
 
+  // Determine if user is host
+  // User is HOST if they created the lobby (isHost flag from index.html)
+  // User is PLAYER if they joined via lobby code (even if it's the same code)
+  const wasHostFlagSet = localStorage.getItem('isHost') === 'true';
+
   if (urlLobbyCode) {
-    // User joined via URL with lobby code - NOT host
+    // User opened lobby with code in URL
     lobbyCode = urlLobbyCode;
-    isHost = false;
+
+    // Check if user just created this lobby (host flag is set)
+    if (wasHostFlagSet) {
+      // User created this lobby - they are the HOST
+      isHost = true;
+      console.log('✅ Du bist der HOST dieser Lobby');
+    } else {
+      // User joined via code - they are a PLAYER
+      isHost = false;
+      localStorage.setItem('isHost', 'false');
+      console.log('👤 Du bist ein SPIELER in dieser Lobby');
+    }
+
     localStorage.setItem('lobbyCode', lobbyCode);
-    localStorage.setItem('isHost', 'false');
   } else {
-    // Check if already in a lobby
+    // No code in URL - check existing session
     lobbyCode = localStorage.getItem('lobbyCode');
     isHost = localStorage.getItem('isHost') === 'true';
   }
@@ -70,6 +86,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add current user as player if not host
   addCurrentUserAsPlayer();
+
+  // Load all players from voice channel (if host)
+  if (isHost) {
+    loadPlayersFromVoiceChannel();
+  }
 });
 
 function loadHostInfo() {
