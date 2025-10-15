@@ -1,3 +1,47 @@
+<!doctype html>
+<html class="no-js" lang="de">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lobby - Last Man Standing</title>
+  <link rel="stylesheet" href="css/lobby.css">
+  <meta name="description" content="Quiz Lobby - Last Man Standing">
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.png">
+
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#8b27c4">
+
+  <script src="config.js"></script>
+</head>
+
+<body>
+
+  <!-- Fullscreen Button -->
+  <button class="fullscreen-btn" id="fullscreen-btn" title="Vollbild">⛶</button>
+
+  <!-- Host Info (Top Left) -->
+  <div class="host-info">
+    <div class="host-label">HOST</div>
+    <div class="host-card">
+      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Host" alt="Host Avatar" id="host-avatar" class="host-avatar">
+      <span class="host-name" id="host-name">Lädt...</span>
+    </div>
+  </div>
+
+  <!-- Main Quiz Area -->
+  <div class="quiz-container">
+    <div class="quiz-header">
+      <h1 class="quiz-title">Last Man Standing</h1>
+      <div class="lobby-code-display" id="lobby-code-container" style="display: none;">
+        <span class="code-label">Lobby Code:</span>
+        <span class="code-value" id="lobby-code-display">------</span>
+      </div>
+    </div>
+
     <!-- Waiting Area -->
     <div class="question-area" id="question-area">
       <div class="waiting-message">
@@ -28,50 +72,3 @@
 </body>
 
 </html>
-<!doctype html>
-<html class="no-js" lang="de">
-
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lobby - Last Man Standing</title>
-  <link rel="stylesheet" href="css/lobby.css">
-  <meta name="description" content="Quiz Lobby - Last Man Standing">
-
-  <link rel="icon" href="favicon.ico" sizes="any">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.png">
-
-  <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#8b27c4">
-
-  <script src="config.js"></script>
-</head>
-
-<body>
-
-  <!-- Fullscreen Button -->
-  <button class="fullscreen-btn" id="fullscreen-btn" title="Vollbild">⛶</button>
-
-  <!-- Host Info (Top Left) -->
-  <div class="host-info">
-    <div class="host-label">Host</div>
-    <div class="host-card">
-      <div style="position: relative;">
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Host" alt="Host Avatar" id="host-avatar" class="host-avatar">
-      </div>
-      <span class="host-name" id="host-name">Lädt...</span>
-    </div>
-  </div>
-
-  <!-- Main Quiz Area -->
-  <div class="quiz-container">
-    <div class="quiz-header">
-      <h1 class="quiz-title">Last Man Standing</h1>
-      <div class="lobby-code-display" id="lobby-code-container" style="display: none;">
-        <span class="code-label">Lobby Code:</span>
-        <span class="code-value" id="lobby-code-display">------</span>
-      </div>
-    </div>
-
-
