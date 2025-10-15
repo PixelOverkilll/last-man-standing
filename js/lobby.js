@@ -150,6 +150,14 @@ function loadHostInfo() {
 
   // Set lobby code
   document.getElementById('lobby-code-display').textContent = currentLobbyCode;
+
+  // Show lobby code ONLY for host
+  const lobbyCodeContainer = document.getElementById('lobby-code-container');
+  if (isCurrentUserHost) {
+    lobbyCodeContainer.style.display = 'flex';
+  } else {
+    lobbyCodeContainer.style.display = 'none';
+  }
 }
 
 // Load host info from voice channel (for players)
@@ -1044,119 +1052,4 @@ document.addEventListener('keydown', function(e) {
   // Press 'l' to simulate player leaving voice
   if (e.key === 'l' || e.key === 'L') {
     const voicePlayer = players.find(p => p.inVoice);
-    if (voicePlayer) {
-      simulatePlayerLeaveVoice(voicePlayer.id);
-    }
-  }
-});
-
-// Load players from voice channel (if host)
-async function loadPlayersFromVoiceChannel() {
-  console.log('🎮 Lade alle Spieler aus dem Voice-Channel...');
-
-  try {
-    const apiUrl = CONFIG.getGamenightUsersUrl();
-    console.log('🔄 Fetching gamenight users from:', apiUrl);
-
-    const response = await fetch(apiUrl);
-
-    if (!response.ok) {
-      console.error('❌ Bot API nicht erreichbar - Status:', response.status);
-      return;
-    }
-
-    const voiceUsers = await response.json();
-    console.log('✅ Voice-Channel User geladen:', voiceUsers);
-
-    // Get current user (host) ID
-    const storedUser = localStorage.getItem('discordUser');
-    const currentUser = storedUser ? JSON.parse(storedUser) : null;
-    const currentUserId = currentUser ? currentUser.id : null;
-
-    // Add each voice user as player (except host)
-    voiceUsers.forEach(voiceUser => {
-      // Skip host
-      if (currentUserId && voiceUser.id === currentUserId) {
-        console.log('⏭️ Host übersprungen:', voiceUser.username);
-        return;
-      }
-
-      // Check if player already exists
-      const existingPlayer = players.find(p => p.id === voiceUser.id);
-      if (existingPlayer) {
-        console.log('⏭️ Spieler bereits in Liste:', voiceUser.username);
-        return;
-      }
-
-      // Create avatar URL
-      const avatarUrl = voiceUser.avatar
-        ? `https://cdn.discordapp.com/avatars/${voiceUser.id}/${voiceUser.avatar}.png?size=128`
-        : `https://cdn.discordapp.com/embed/avatars/${parseInt(voiceUser.discriminator || '0') % 5}.png`;
-
-      // Create player object
-      const newPlayer = {
-        id: voiceUser.id,
-        name: voiceUser.global_name || voiceUser.username,
-        avatar: avatarUrl,
-        score: 0,
-        inVoice: true
-      };
-
-      addPlayer(newPlayer);
-      console.log('✅ Spieler hinzugefügt:', newPlayer.name);
-    });
-
-    // Show success message
-    if (voiceUsers.length > 0) {
-      console.log(`🎉 ${voiceUsers.length} Spieler aus dem Voice-Channel geladen!`);
-    } else {
-      console.log('ℹ️ Keine Spieler im Voice-Channel gefunden');
-    }
-
-  } catch (error) {
-    console.error('❌ Fehler beim Laden der Voice-Channel User:', error);
-  }
-}
-
-// Add current user as player (if not host)
-function addCurrentUserAsPlayer() {
-  const storedUser = localStorage.getItem('discordUser');
-  const isHost = localStorage.getItem('isHost') === 'true';
-
-  console.log('👤 addCurrentUserAsPlayer - isHost:', isHost);
-
-  if (!storedUser) {
-    console.log('❌ Kein User gefunden');
-    return;
-  }
-
-  if (isHost) {
-    console.log('✅ User ist Host - wird NICHT als Spieler hinzugefügt');
-    return;
-  }
-
-  const user = JSON.parse(storedUser);
-
-  // Check if user is already in players list
-  const existingPlayer = players.find(p => p.id === user.id);
-  if (existingPlayer) {
-    console.log('⏭️ User ist bereits in der Spielerliste');
-    return;
-  }
-
-  // Add user as player
-  const avatarUrl = user.avatar
-    ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-    : `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || '0') % 5}.png`;
-
-  const newPlayer = {
-    id: user.id,
-    name: user.global_name || user.username,
-    avatar: avatarUrl,
-    score: 0,
-    inVoice: false
-  };
-
-  addPlayer(newPlayer);
-  console.log('✅ User als Spieler hinzugefügt:', newPlayer.name);
-}
+    if
