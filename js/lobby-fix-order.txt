@@ -1,0 +1,19 @@
+  if (!loadCurrentUser()) {
+    console.error('❌ Kein User gefunden - zurück zur Startseite');
+    showNotification('❌ Bitte melde dich zuerst an!', 'error', 3000);
+    setTimeout(() => window.location.href = 'index.html', 3000);
+    return;
+  }
+
+  // WICHTIG: Initialisiere UI ZUERST (setzt Lobby-Code und zeigt UI-Elemente)
+  initUI();
+
+  // DANN zeige Host-Info an (zeigt Namen und Avatar)
+  if (isHost) {
+    console.log('🎯 Zeige Host-Info sofort an');
+    displayHostInfo();
+  }
+
+  setupEventListeners();
+  setTimeout(() => initPeerConnection(), 300);
+
