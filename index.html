@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="css/style.css">
   <meta name="description" content="Last Man Standing Quiz - Trete dem Spiel bei!">
 
-  <meta property="og:title" content="">
-  <meta property="og:type" content="">
-  <meta property="og:url" content="">
-  <meta property="og:image" content="">
-  <meta property="og:image:alt" content="">
+  <meta property="og:title" content="Last Man Standing - Quiz Game">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://pixeloverk.com">
+  <meta property="og:image" content="icon.png">
+  <meta property="og:image:alt" content="Last Man Standing Quiz Logo">
 
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -78,7 +78,8 @@
             <h3 class="option-title">Lobby beitreten</h3>
             <p class="option-description">Tritt einer bestehenden Lobby bei</p>
             <div class="input-group">
-              <input type="text" id="lobby-code" class="text-input" placeholder="Lobby-Code eingeben..." maxlength="6">
+              <label for="lobby-code" class="visually-hidden">Lobby-Code</label>
+              <input type="text" id="lobby-code" class="text-input" placeholder="Lobby-Code eingeben..." maxlength="6" aria-label="Lobby-Code eingeben">
             </div>
             <button class="btn btn-secondary" id="join-lobby-btn">
               <span class="btn-icon">🚪</span>
