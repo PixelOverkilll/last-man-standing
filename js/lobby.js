@@ -262,13 +262,13 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  // WICHTIG: Zeige Host-Info SOFORT an, nicht erst nach Peer-Verbindung!
+  // WICHTIG: Initialisiere UI ZUERST (setzt Lobby-Code)
+  initUI();
+  // DANN zeige Host-Info an
   if (isHost) {
     console.log('🎯 Zeige Host-Info sofort an');
     displayHostInfo();
   }
-
-  initUI();
   setupEventListeners();
   setTimeout(() => initPeerConnection(), 300);
 });
