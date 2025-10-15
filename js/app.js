@@ -345,6 +345,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('✅ Discord User gefunden:', storedUser);
 
+    // Admin-Passwort abfragen
+    const adminPassword = prompt('🔐 Admin-Passwort eingeben um Lobby zu erstellen:');
+
+    if (adminPassword !== 'PXL339') {
+      alert('❌ Falsches Passwort! Lobby kann nicht erstellt werden.');
+      console.error('❌ Falsches Admin-Passwort');
+      return;
+    }
+
+    console.log('✅ Admin-Passwort korrekt');
+
     const userData = JSON.parse(storedUser);
     const lobbyCode = generateLobbyCode();
 
