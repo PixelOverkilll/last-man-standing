@@ -269,7 +269,10 @@ function handleIncomingConnection(conn) {
       console.log('📤 Sende Lobby-State an:', player.name);
       conn.send({
         type: 'lobby-state',
-        host: Array.from(players.values()).find(p => p.isHost),
+        host: {
+          name: currentUser.global_name || currentUser.username,
+          avatar: getUserAvatar(currentUser)
+        },
         players: Array.from(players.values())
       });
     }, 500);
