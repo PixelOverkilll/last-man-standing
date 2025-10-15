@@ -22,7 +22,19 @@ const client = new Client({
 
 // Express Server für API
 const app = express();
-app.use(cors());
+
+// CORS Configuration - Erlaube Zugriff von GitHub Pages und localhost
+const corsOptions = {
+  origin: [
+    'https://pixeloverkilll.github.io',
+    'http://localhost',
+    'http://127.0.0.1'
+  ],
+  methods: ['GET', 'POST'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Store voice states
