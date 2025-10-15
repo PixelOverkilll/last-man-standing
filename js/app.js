@@ -94,12 +94,31 @@ document.addEventListener('DOMContentLoaded', function() {
       g = Math.floor(g / count);
       b = Math.floor(b / count);
 
-      // Increase saturation for more vibrant colors
+      // Convert to HSL for better color manipulation
       const hsl = rgbToHsl(r, g, b);
-      hsl[1] = Math.min(hsl[1] * 1.5, 1); // Increase saturation
-      hsl[2] = Math.max(0.4, Math.min(hsl[2], 0.6)); // Adjust brightness
 
-      const rgb = hslToRgb(hsl[0], hsl[1], hsl[2]);
+      // VERBESSERT: Verschiebe Farbe in Richtung Lila/Violett (Hue ~270-300°)
+      // Wenn die Farbe zu weit von Lila entfernt ist, ziehe sie näher heran
+      let targetHue = hsl[0];
+      const purpleHue = 0.75; // 270° in 0-1 Skala (Lila/Violett)
+
+      // Berechne den Abstand zum Lila-Ton
+      let hueDiff = Math.abs(targetHue - purpleHue);
+      if (hueDiff > 0.5) hueDiff = 1 - hueDiff; // Berücksichtige Hue-Wrap
+
+      // Wenn die Farbe zu weit von Lila entfernt ist, verschiebe sie sanft
+      if (hueDiff > 0.15) {
+        // Mische die extrahierte Farbe mit Lila (70% Lila, 30% Original)
+        targetHue = purpleHue * 0.7 + targetHue * 0.3;
+      }
+
+      // Erhöhe Sättigung für lebendigere Farben
+      hsl[1] = Math.min(hsl[1] * 1.8, 0.9); // Höhere Sättigung
+
+      // Optimale Helligkeit für gute Sichtbarkeit
+      hsl[2] = Math.max(0.45, Math.min(hsl[2], 0.65));
+
+      const rgb = hslToRgb(targetHue, hsl[1], hsl[2]);
       const color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
 
       callback(color);
