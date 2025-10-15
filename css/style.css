@@ -317,7 +317,7 @@ body {
 .join-options {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 25px;
+  gap: 35px; /* Mehr Abstand zwischen Cards von 25px */
   margin-top: 35px;
 }
 
@@ -369,38 +369,9 @@ body {
   line-height: 1.5;
 }
 
+/* Divider - VERBESSERT */
 .divider {
-  text-align: center;
-  position: relative;
-  margin: 20px 0;
-}
-
-.divider span {
-  background: rgba(30, 15, 45, 0.98);
-  padding: 0 20px;
-  color: #a78bfa;
-  font-size: 1.1rem;
-  font-weight: 700;
-  position: relative;
-  z-index: 1;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    #7c3aed 20%,
-    #a855f7 50%,
-    #7c3aed 80%,
-    transparent 100%);
-  box-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+  display: none; /* Verstecke den Divider komplett */
 }
 
 /* Input Group - VERBESSERT */
