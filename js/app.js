@@ -449,7 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
   bgMenuBtn.addEventListener('click', function(e) {
     e.stopPropagation();
     if (bgOptions.style.display === 'none' || bgOptions.style.display === '') {
-      bgOptions.style.display = 'flex';
+      bgOptions.style.display = 'block';
     } else {
       bgOptions.style.display = 'none';
     }

@@ -54,24 +54,30 @@
       <div class="header-section">
         <h1 class="game-title">Last Man Standing</h1>
         <p class="game-subtitle">Das ultimative Quiz-Duell</p>
+      </div>
 
-        <!-- Background Style Selector -->
-        <div class="bg-selector">
-          <button class="bg-menu-btn" id="bg-menu-btn" title="Designs anzeigen">
-            <span class="bg-icon">🎨</span>
-          </button>
-          <div class="bg-options" id="bg-options" style="display: none;">
+      <!-- Design-Button oben rechts -->
+      <div class="bg-selector" id="bg-selector">
+        <button class="bg-menu-btn" id="bg-menu-btn" title="Designs anzeigen">
+          <span class="bg-icon">🎨</span>
+        </button>
+        <div class="bg-options-menu" id="bg-options" style="display: none;">
+          <div class="bg-preview-list">
             <button class="bg-btn" data-bg="checkerboard" title="Schachbrett">
-              <span class="bg-icon">🎨</span>
+              <div class="bg-preview bg-preview-checkerboard"></div>
+              <span class="bg-label">Schachbrett</span>
             </button>
             <button class="bg-btn" data-bg="gradient" title="Gradient">
-              <span class="bg-icon">🌈</span>
+              <div class="bg-preview bg-preview-gradient"></div>
+              <span class="bg-label">Gradient</span>
             </button>
             <button class="bg-btn" data-bg="dots" title="Punkte">
-              <span class="bg-icon">⚫</span>
+              <div class="bg-preview bg-preview-dots"></div>
+              <span class="bg-label">Punkte</span>
             </button>
             <button class="bg-btn" data-bg="waves" title="Wellen">
-              <span class="bg-icon">🌊</span>
+              <div class="bg-preview bg-preview-waves"></div>
+              <span class="bg-label">Wellen</span>
             </button>
           </div>
         </div>
