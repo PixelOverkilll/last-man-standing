@@ -16,6 +16,41 @@ document.addEventListener('DOMContentLoaded', function() {
   const joinLobbyBtn = document.getElementById('join-lobby-btn');
   const lobbyCodeInput = document.getElementById('lobby-code');
 
+  // Background Selector
+  const bgButtons = document.querySelectorAll('.bg-btn');
+  const savedBg = localStorage.getItem('backgroundStyle') || 'checkerboard';
+
+  // Set initial background
+  setBackground(savedBg);
+
+  // Background button click handlers
+  bgButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const bgType = this.getAttribute('data-bg');
+      setBackground(bgType);
+      localStorage.setItem('backgroundStyle', bgType);
+    });
+  });
+
+  function setBackground(bgType) {
+    // Remove all background classes
+    document.body.classList.remove('bg-checkerboard', 'bg-gradient', 'bg-dots', 'bg-waves');
+
+    // Remove active state from all buttons
+    bgButtons.forEach(btn => btn.classList.remove('active'));
+
+    // Add selected background class (default is checkerboard, no class needed)
+    if (bgType !== 'checkerboard') {
+      document.body.classList.add(`bg-${bgType}`);
+    }
+
+    // Set active button
+    const activeBtn = document.querySelector(`[data-bg="${bgType}"]`);
+    if (activeBtn) {
+      activeBtn.classList.add('active');
+    }
+  }
+
   // Check for access token in URL (after Discord redirect)
   function getAccessTokenFromURL() {
     const fragment = window.location.hash.substring(1);
