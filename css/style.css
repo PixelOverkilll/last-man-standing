@@ -38,22 +38,37 @@ body {
   justify-content: center;
   align-items: center;
   background:
-    linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
-    linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
-    linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
-  background-size: 200px 200px; /* Vergrößert von 120px auf 200px */
-  background-position: 0 0, 0 100px, 100px -100px, -100px 0; /* Angepasst von 60px auf 100px */
-  background-color: #2d2d2d;
-  animation: checkerboard-move 30s linear infinite;
+    repeating-conic-gradient(
+      from 0deg at 0% 0%,
+      #1a1a1a 0deg 90deg,
+      #2d2d2d 90deg 180deg
+    );
+  background-size: 200px 200px;
+  background-color: #252525;
+  animation: checkerboard-move 30s linear infinite, color-shift 15s ease-in-out infinite;
 }
 
 @keyframes checkerboard-move {
   0% {
-    background-position: 0 0, 0 100px, 100px -100px, -100px 0; /* Angepasst von 60px auf 100px */
+    background-position: 0 0;
   }
   100% {
-    background-position: 200px 200px, 200px 300px, 300px 100px, 100px 200px; /* Angepasst von 120px/180px/60px auf 200px/300px/100px */
+    background-position: 200px 200px;
+  }
+}
+
+@keyframes color-shift {
+  0%, 100% {
+    filter: hue-rotate(0deg) brightness(1);
+  }
+  25% {
+    filter: hue-rotate(10deg) brightness(1.1);
+  }
+  50% {
+    filter: hue-rotate(15deg) brightness(0.95);
+  }
+  75% {
+    filter: hue-rotate(5deg) brightness(1.05);
   }
 }
 
