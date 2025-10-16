@@ -37,23 +37,21 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  background:
-    repeating-conic-gradient(
-      from 0deg at 0% 0%,
-      #1a1a1a 0deg 90deg,
-      #2d2d2d 90deg 180deg
-    );
+  background-color: #2d2d2d;
+  background-image:
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a),
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%, transparent 75%, #1a1a1a 75%, #1a1a1a);
   background-size: 200px 200px;
-  background-color: #252525;
+  background-position: 0 0, 100px 100px;
   animation: checkerboard-move 30s linear infinite, color-shift 15s ease-in-out infinite;
 }
 
 @keyframes checkerboard-move {
   0% {
-    background-position: 0 0;
+    background-position: 0 0, 100px 100px;
   }
   100% {
-    background-position: 200px 200px;
+    background-position: 200px 200px, 300px 300px;
   }
 }
 
@@ -62,10 +60,10 @@ body {
     filter: hue-rotate(0deg) brightness(1);
   }
   25% {
-    filter: hue-rotate(10deg) brightness(1.1);
+    filter: hue-rotate(10deg) brightness(1.08);
   }
   50% {
-    filter: hue-rotate(15deg) brightness(0.95);
+    filter: hue-rotate(15deg) brightness(0.98);
   }
   75% {
     filter: hue-rotate(5deg) brightness(1.05);
