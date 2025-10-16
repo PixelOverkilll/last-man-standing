@@ -524,7 +524,7 @@ body {
   gap: 15px; /* Reduziert von 20px */
   margin-top: 30px; /* Reduziert von 40px */
   padding-top: 30px;
-  border-top: 2px solid rgba(124, 58, 237, 0.4);
+  border-top: none; /* Entferne den Strich */
 }
 
 .feature {
