@@ -306,10 +306,51 @@ class P2PConnection {
       this.peer.destroy();
     }
   }
+
+  // Alle Verbindungen und Peer sauber schließen
+  disconnectAll() {
+    // Alle Verbindungen schließen
+    if (this.connections && this.connections.size > 0) {
+      for (const [playerId, conn] of this.connections.entries()) {
+        try {
+          conn.close();
+        } catch (e) {
+          console.warn('Fehler beim Schließen der Verbindung:', playerId, e);
+        }
+      }
+      this.connections.clear();
+    }
+    // Host-Verbindung schließen
+    if (this.hostConnection) {
+      try {
+        this.hostConnection.close();
+      } catch (e) {
+        console.warn('Fehler beim Schließen der Host-Verbindung:', e);
+      }
+      this.hostConnection = null;
+    }
+    // Peer-Objekt zerstören
+    if (this.peer) {
+      try {
+        this.peer.destroy();
+      } catch (e) {
+        console.warn('Fehler beim Zerstören des Peer-Objekts:', e);
+      }
+      this.peer = null;
+    }
+    // Lobby-Code und lokale Spieler-Referenz entfernen
+    this.lobbyCode = null;
+    this.localPlayer = null;
+    // Event-Handler entfernen
+    this.onPlayerJoined = null;
+    this.onPlayerLeft = null;
+    this.onGameStateUpdate = null;
+    this.onMessageReceived = null;
+    this.isHost = false;
+  }
 }
 
 // Export für ES6 Module
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = P2PConnection;
 }
-
