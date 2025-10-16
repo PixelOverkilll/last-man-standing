@@ -128,72 +128,89 @@ body {
   z-index: 1;
 }
 
+.game-title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow:
+    0 0 10px #8b27c4,
+    0 0 20px #8b27c4,
+    0 0 40px #fff,
+    0 0 60px #8b27c4;
+  animation: glow-title 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow-title {
+  from {
+    text-shadow:
+      0 0 10px #8b27c4,
+      0 0 20px #8b27c4,
+      0 0 40px #fff,
+      0 0 60px #8b27c4;
+  }
+  to {
+    text-shadow:
+      0 0 20px #fff,
+      0 0 40px #8b27c4,
+      0 0 80px #fff,
+      0 0 120px #8b27c4;
+  }
+}
+
 /* Background Selector */
 .bg-selector {
+  position: relative;
   display: flex;
   justify-content: center;
+  margin-top: 1rem;
+}
+
+.bg-menu-btn {
+  background: #8b27c4;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 0 10px #8b27c4;
+  transition: box-shadow 0.2s;
+}
+.bg-menu-btn:active,
+.bg-menu-btn:focus {
+  box-shadow: 0 0 20px #fff;
+}
+
+.bg-options {
+  position: absolute;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(44, 44, 44, 0.98);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px #8b27c4;
+  padding: 12px 16px;
+  display: flex;
   gap: 12px;
-  margin-top: 25px;
-  padding: 15px;
-  background: rgba(88, 28, 135, 0.2);
-  border-radius: 15px;
-  border: 2px solid rgba(124, 58, 237, 0.3);
+  z-index: 10;
 }
 
 .bg-btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  border: 2px solid rgba(124, 58, 237, 0.5);
-  background: rgba(88, 28, 135, 0.3);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.bg-btn:hover {
-  transform: translateY(-3px) scale(1.05);
-  border-color: #a855f7;
-  background: rgba(88, 28, 135, 0.5);
-  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.6);
-}
-
-.bg-btn.active {
-  border-color: #a855f7;
-  background: rgba(124, 58, 237, 0.6);
-  box-shadow: 0 0 20px rgba(124, 58, 237, 0.8);
-}
-
-.bg-btn.active::after {
-  content: '✓';
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  background: #10b981;
-  color: white;
-  width: 20px;
-  height: 20px;
+  background: #333;
+  color: #fff;
+  border: none;
   border-radius: 50%;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
 }
-
-.bg-icon {
-  font-size: 1.8rem;
-  filter: drop-shadow(0 2px 8px rgba(124, 58, 237, 0.5));
-  transition: all 0.3s ease;
-}
-
-.bg-btn:hover .bg-icon {
-  transform: scale(1.2);
-  filter: drop-shadow(0 4px 12px rgba(124, 58, 237, 0.8));
+.bg-btn.active,
+.bg-btn:focus {
+  background: #8b27c4;
+  box-shadow: 0 0 10px #fff;
 }
 
 /* Background Styles */

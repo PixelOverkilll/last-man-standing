@@ -442,6 +442,26 @@ document.addEventListener('DOMContentLoaded', function() {
     return code;
   }
 
+  // Design-Menü anzeigen/ausblenden
+  const bgMenuBtn = document.getElementById('bg-menu-btn');
+  const bgOptions = document.getElementById('bg-options');
+
+  bgMenuBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (bgOptions.style.display === 'none' || bgOptions.style.display === '') {
+      bgOptions.style.display = 'flex';
+    } else {
+      bgOptions.style.display = 'none';
+    }
+  });
+
+  // Schließt das Menü, wenn außerhalb geklickt wird
+  document.addEventListener('click', function(e) {
+    if (!bgOptions.contains(e.target) && !bgMenuBtn.contains(e.target)) {
+      bgOptions.style.display = 'none';
+    }
+  });
+
   // Initialize the app
   init();
 });
