@@ -73,7 +73,7 @@ body {
 
 .start-container {
   width: 90%;
-  max-width: 800px; /* Vergrößert von 700px für bessere Organisation */
+  max-width: 1000px; /* Vergrößert von 800px auf 1000px */
   padding: 20px;
 }
 
