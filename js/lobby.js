@@ -236,7 +236,7 @@ async function createLobby(code) {
   };
 
   try {
-    const id = await p2p.createLobby(hostPlayer);
+    const id = await p2p.createLobby(hostPlayer, code);
     lobbyCode = id;
     localStorage.setItem('lobbyCode', lobbyCode);
     // Starte Heartbeat für Host

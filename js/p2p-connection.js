@@ -37,10 +37,10 @@ class P2PConnection {
   }
 
   // Host erstellt eine Lobby
-  async createLobby(hostPlayer) {
+  async createLobby(hostPlayer, lobbyCode) {
     return new Promise((resolve, reject) => {
-      // Generiere einen einzigartigen Lobby-Code (6 Zeichen)
-      this.lobbyCode = this.generateLobbyCode();
+      // Use provided lobby code if available (app may generate it before redirect), otherwise generate one
+      this.lobbyCode = lobbyCode || this.generateLobbyCode();
 
       // Erstelle Peer mit dem Lobby-Code als ID
       this.peer = new Peer(this.lobbyCode, {
@@ -87,6 +87,7 @@ class P2PConnection {
 
       // Lausche auf eingehende Verbindungen
       this.peer.on('connection', (conn) => {
+        console.log('📡 Peer.on(connection) received:', conn && conn.peer);
         this.handleIncomingConnection(conn);
       });
     });
@@ -121,7 +122,7 @@ class P2PConnection {
       });
 
       this.peer.on('open', (id) => {
-        console.log('🔗 Verbinde mit Lobby:', lobbyCode);
+        console.log('🔗 Verbinde mit Lobby:', lobbyCode, 'als', player.id);
 
         // Verbinde mit dem Host
         const conn = this.peer.connect(lobbyCode, {
@@ -133,7 +134,7 @@ class P2PConnection {
         this.hostConnection = conn;
 
         conn.on('open', () => {
-          console.log('✅ Verbindung zum Host hergestellt');
+          console.log('✅ Verbindung zum Host hergestellt -> conn.peer=', conn.peer, 'metadata=', conn.metadata);
           // Sende Spieler-Info an Host
           this.sendToHost({
             type: 'player-join',
@@ -144,7 +145,6 @@ class P2PConnection {
 
         conn.on('error', (error) => {
           console.error('❌ Verbindungsfehler:', error);
-          // Versuche Verbindung zu schließen, damit close-Handler greift
           try { conn.close(); } catch (e) { /* ignore */ }
           reject(error);
         });
@@ -169,7 +169,18 @@ class P2PConnection {
         username: 'Spieler_' + conn.peer.substring(0, 4)
       };
 
+      console.log('📥 Incoming connection open - resolved player=', player);
+
       this.connections.set(player.id, conn);
+
+      // Set initial lastPong timestamp immediately when connection opens
+      // so the heartbeat won't treat a newly opened connection as stale.
+      try {
+        this.lastPong.set(player.id, Date.now());
+        console.log('🕒 Set initial lastPong for', player.id, this.lastPong.get(player.id));
+      } catch (e) {
+        console.warn('Fehler beim Setzen von initial lastPong für', player.id, e);
+      }
 
       // Sende aktuelle Lobby-Daten an neuen Spieler
       this.sendToPlayer(player.id, {
@@ -228,6 +239,7 @@ class P2PConnection {
           for (const [id, c] of this.connections.entries()) {
             if (c === conn) {
               this.lastPong.set(id, Date.now());
+              console.log('🟢 Received pong from', id, 'updated lastPong=', this.lastPong.get(id));
               break;
             }
           }
@@ -303,6 +315,11 @@ class P2PConnection {
       // if reading CONFIG fails, keep existing instance values
     }
 
+    // Enforce sane minimums to avoid accidental immediate disconnects
+    interval = Math.max(1000, Math.floor(Number(interval) || 5000));
+    // Ensure timeout is larger than interval (at least +1000ms)
+    timeout = Math.max(interval + 1000, Math.floor(Number(timeout) || (interval + 1000)));
+
     this._pingInterval = setInterval(() => {
       const now = Date.now();
       for (const [playerId, conn] of Array.from(this.connections.entries())) {
@@ -325,6 +342,8 @@ class P2PConnection {
         }
       }
     }, interval);
+
+    console.log(`⏱️ Heartbeat started (interval=${interval}ms, timeout=${timeout}ms). Connections will be pruned after timeout.`);
   }
 
   stopHeartbeat() {
