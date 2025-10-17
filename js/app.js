@@ -13,15 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
       _bgSel.style.top = '24px';
       _bgSel.style.right = '24px';
       _bgSel.style.zIndex = '99999';
-      // Debug-Log: gib berechnete Styles aus, damit du in der Console prüfen kannst
-      setTimeout(() => {
-        try {
-          const cs = window.getComputedStyle(_bgSel);
-          console.log('DBG: #bg-selector computed -> position:', cs.position, 'top:', cs.top, 'right:', cs.right, 'z-index:', cs.zIndex);
-        } catch (e) {
-          console.warn('DBG: Fehler beim Lesen computed style', e);
-        }
-      }, 100);
     }
   } catch (e) {
     console.warn('bg-selector fallback failed:', e);
