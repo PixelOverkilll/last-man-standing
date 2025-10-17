@@ -212,13 +212,38 @@ class P2PConnection {
 
   // Verbindung getrennt
   handleDisconnect(conn) {
-    const playerId = conn.peer;
+    // Versuche zuerst, die Player-ID aus den Metadaten zu nutzen
+    let playerId = conn?.metadata?.player?.id || null;
+
+    // Falls keine Metadata-ID vorhanden ist, nutze conn.peer als Fallback
+    if (!playerId) {
+      playerId = conn.peer || null;
+    }
 
     if (this.isHost) {
-      // Host: Entferne Spieler
-      this.connections.delete(playerId);
+      // Falls der gefundene playerId nicht als Key existiert, suche den Map-Eintrag
+      if (playerId && !this.connections.has(playerId)) {
+        for (const [id, c] of this.connections.entries()) {
+          if (c === conn) {
+            playerId = id;
+            break;
+          }
+        }
+      }
 
-      // Benachrichtige andere Spieler
+      // Entferne den Spieler-Eintrag aus der Map (falls vorhanden)
+      if (playerId && this.connections.has(playerId)) {
+        this.connections.delete(playerId);
+      } else {
+        // Notfall: entferne alle Einträge, die auf dasselbe Connection-Objekt zeigen
+        for (const [id, c] of Array.from(this.connections.entries())) {
+          if (c === conn) {
+            this.connections.delete(id);
+          }
+        }
+      }
+
+      // Benachrichtige andere Spieler (wenn wir eine ID ermitteln konnten, sende sie)
       this.broadcast({
         type: 'player-left',
         playerId: playerId
@@ -259,11 +284,19 @@ class P2PConnection {
   broadcast(data) {
     if (!this.isHost) return;
 
-    this.connections.forEach((conn, playerId) => {
-      if (conn.open) {
-        conn.send(data);
+    // Sende nur an offene Verbindungen. Entferne geschlossene/verwaiste Conns
+    for (const [playerId, conn] of Array.from(this.connections.entries())) {
+      if (conn && conn.open) {
+        try {
+          conn.send(data);
+        } catch (e) {
+          console.warn('Fehler beim Senden an', playerId, e);
+        }
+      } else {
+        // Verbindung ist geschlossen oder ungültig -> entfernen
+        this.connections.delete(playerId);
       }
-    });
+    }
   }
 
   // Lobby-Code generieren
@@ -278,79 +311,4 @@ class P2PConnection {
 
   // Alle Spieler abrufen
   getPlayers() {
-    if (this.isHost) {
-      return Array.from(this.connections.entries()).map(([id, conn]) => ({
-        id: id,
-        ...conn.metadata?.player
-      }));
-    }
-    return [];
-  }
-
-  // Verbindung schließen
-  disconnect() {
-    if (this.isHost) {
-      // Host: Alle Verbindungen schließen
-      this.connections.forEach((conn) => {
-        conn.close();
-      });
-      this.connections.clear();
-    } else {
-      // Spieler: Vom Host trennen
-      if (this.hostConnection) {
-        this.hostConnection.close();
-      }
-    }
-
-    if (this.peer) {
-      this.peer.destroy();
-    }
-  }
-
-  // Alle Verbindungen und Peer sauber schließen
-  disconnectAll() {
-    // Alle Verbindungen schließen
-    if (this.connections && this.connections.size > 0) {
-      for (const [playerId, conn] of this.connections.entries()) {
-        try {
-          conn.close();
-        } catch (e) {
-          console.warn('Fehler beim Schließen der Verbindung:', playerId, e);
-        }
-      }
-      this.connections.clear();
-    }
-    // Host-Verbindung schließen
-    if (this.hostConnection) {
-      try {
-        this.hostConnection.close();
-      } catch (e) {
-        console.warn('Fehler beim Schließen der Host-Verbindung:', e);
-      }
-      this.hostConnection = null;
-    }
-    // Peer-Objekt zerstören
-    if (this.peer) {
-      try {
-        this.peer.destroy();
-      } catch (e) {
-        console.warn('Fehler beim Zerstören des Peer-Objekts:', e);
-      }
-      this.peer = null;
-    }
-    // Lobby-Code und lokale Spieler-Referenz entfernen
-    this.lobbyCode = null;
-    this.localPlayer = null;
-    // Event-Handler entfernen
-    this.onPlayerJoined = null;
-    this.onPlayerLeft = null;
-    this.onGameStateUpdate = null;
-    this.onMessageReceived = null;
-    this.isHost = false;
-  }
-}
-
-// Export für ES6 Module
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = P2PConnection;
-}
+    if
