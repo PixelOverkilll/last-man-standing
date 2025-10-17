@@ -23,6 +23,41 @@ body {
   overflow: hidden;
 }
 
+/* Zusätzliche Background-Klassen: werden auf <body> angewendet */
+body.bg-checkerboard {
+  /* explizit gleiche Darstellung wie default */
+  background:
+    linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+    linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+  background-size: 120px 120px;
+  background-position: 0 0, 0 60px, 60px -60px, -60px 0;
+  background-color: #2d2d2d;
+  animation: checkerboard-move 30s linear infinite;
+}
+
+body.bg-gradient {
+  background: radial-gradient(circle at 10% 20%, #7c3aed 0%, #5b21a1 30%, #0f172a 100%);
+  background-attachment: fixed;
+  animation: none;
+}
+
+body.bg-dots {
+  background-color: #111827;
+  background-image:
+    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 20px 20px, 40px 40px;
+  background-position: 0 0, 10px 10px;
+}
+
+body.bg-waves {
+  background: linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(11,14,23,0.85) 100%),
+              repeating-linear-gradient( -60deg, rgba(124,58,237,0.03), rgba(124,58,237,0.03) 2px, transparent 2px, transparent 8px );
+  background-blend-mode: overlay;
+}
+
 @keyframes checkerboard-move {
   0% {
     background-position: 0 0, 0 60px, 60px -60px, -60px 0;

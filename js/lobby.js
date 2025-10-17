@@ -454,6 +454,16 @@ document.addEventListener('DOMContentLoaded', async function() {
   console.log('🎯 isHost:', isHost);
   console.log('🎯 lobbyCode:', lobbyCode);
 
+  // --- NEU: Anwenden des gespeicherten Hintergrunds in der Lobby ---
+  applySavedBackground();
+
+  // Reagiere auf Änderungen in localStorage (z.B. anderes Tab ändert Auswahl)
+  window.addEventListener('storage', (evt) => {
+    if (evt.key === 'backgroundStyle') {
+      applySavedBackground();
+    }
+  });
+
   // Initialisiere UI
   initUI();
   setupEventListeners();
@@ -677,5 +687,27 @@ style.textContent = `
   }
 `;
 document.head.appendChild(style);
+
+// Neue Hilfsfunktion: wendet die gespeicherte Hintergrundklasse an
+function applySavedBackground() {
+  try {
+    const bgType = localStorage.getItem('backgroundStyle') || 'checkerboard';
+
+    // Entferne mögliche Klassen
+    document.body.classList.remove('bg-checkerboard', 'bg-gradient', 'bg-dots', 'bg-waves');
+
+    // Wenn checkerboard, lasse body ohne extra-Klasse (oder setze bg-checkerboard explizit)
+    if (bgType && bgType !== 'checkerboard') {
+      document.body.classList.add('bg-' + bgType);
+      console.log('🎨 Lobby Hintergrund gesetzt auf:', bgType);
+    } else {
+      // Optional: explizit setzen, damit das Styling konsistent ist
+      document.body.classList.add('bg-checkerboard');
+      console.log('🎨 Lobby Hintergrund gesetzt auf: checkerboard (default)');
+    }
+  } catch (e) {
+    console.error('❌ Fehler beim Anwenden des Hintergrunds:', e);
+  }
+}
 
 console.log('✅ Lobby System MIT P2P geladen!');
