@@ -25,6 +25,11 @@
   border: 0;
 }
 
+:root {
+  --user-theme-color: #7c3aed;
+  --user-theme-rgb: 124, 58, 237;
+}
+
 html {
   color: #222;
   font-size: 1em;
@@ -159,10 +164,13 @@ body {
 
 /* Background Selector */
 .bg-selector {
-  position: relative;
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
   display: flex;
-  justify-content: center;
-  margin-top: 1rem;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .bg-menu-btn {
@@ -175,42 +183,50 @@ body {
   font-size: 2rem;
   cursor: pointer;
   box-shadow: 0 0 10px #8b27c4;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.12s;
 }
 .bg-menu-btn:active,
 .bg-menu-btn:focus {
   box-shadow: 0 0 20px #fff;
+  transform: scale(0.98);
 }
 
-.bg-options {
+/* Menü-Container, erscheint direkt unterhalb des Buttons */
+.bg-options-menu {
   position: absolute;
-  top: 60px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 56px;
+  right: 0;
   background: rgba(44, 44, 44, 0.98);
-  border-radius: 16px;
-  box-shadow: 0 4px 24px #8b27c4;
-  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 6px 30px rgba(124,58,237,0.25);
+  padding: 10px;
+  min-width: 220px;
   display: flex;
-  gap: 12px;
-  z-index: 10;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bg-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .bg-btn {
-  background: #333;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
   border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: #fff;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
 }
-.bg-btn.active,
-.bg-btn:focus {
-  background: #8b27c4;
-  box-shadow: 0 0 10px #fff;
+.bg-btn:hover,
+.bg-btn.active {
+  background: rgba(139,39,196,0.12);
+  box-shadow: 0 4px 12px rgba(124,58,237,0.12);
 }
 
 /* Background Styles */

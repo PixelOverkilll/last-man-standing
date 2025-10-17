@@ -1,7 +1,5 @@
 // Discord OAuth2 Configuration
 // Nutzt jetzt die config.js für automatisches Umschalten zwischen Local/Production
-const DISCORD_CLIENT_ID = CONFIG.DISCORD.CLIENT_ID;
-const DISCORD_REDIRECT_URI = CONFIG.getRedirectUri();
 const DISCORD_OAUTH_URL = CONFIG.getDiscordOAuthUrl();
 
 // Quiz Start Page JavaScript with Discord Integration
@@ -68,8 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
       if (response.ok) {
-        const user = await response.json();
-        return user;
+        return await response.json();
       }
     } catch (error) {
       console.error('Error fetching Discord user:', error);
