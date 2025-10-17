@@ -98,6 +98,16 @@ Neues Punktesystem-Design (Oktober 2025)
 - Die Leiste bleibt rechts, ist aber optisch ruhiger und besser integriert.
 - Test: Beim Spielerwechsel passt sich die Leiste dynamisch an.
 
+Design-Änderung Punkte-Knöpfe (Okt 2025)
+----------------------------------------
+- Die CSS-Klasse `.points-btn` wurde optisch verbessert:
+  - Hintergrund jetzt lila Farbverlauf (`#7c3aed` → `#a855f7`)
+  - Schrift weiß und fett für bessere Lesbarkeit
+  - Hover-Effekt: Border und Schatten kräftiger lila (`#8b27c4`), Schatten intensiver
+  - Farbverlauf kehrt sich beim Hover um
+- Änderungen in `css/style.css` ab Zeile 1002 vorgenommen
+- Ziel: Buttons sind auffälliger, klarer und besser lesbar
+
 Für zukünftige KIs:
 - Die Avatar-Farbe kann für weitere UI-Elemente als CSS-Variable genutzt werden.
 - Erweiterungen am Punktesystem sollten die CSS-Variable und die bestehenden Klassen verwenden.

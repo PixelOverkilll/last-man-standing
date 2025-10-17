@@ -653,7 +653,7 @@ body.bg-waves::before {
 .player-score {
   background: rgba(255,255,255,0.85);
   border: 2px solid var(--avatar-color, #7c3aed);
-  box-shadow: 0 2px 12px 0 rgba(var(--avatar-rgb, 124,58,237), 0.15);
+  box-shadow: 0 2px 12px 0 rgba(var(--avatar-rgb,124,58,237), 0.15);
   color: #222;
   border-radius: 12px;
   padding: 8px 18px;
@@ -1000,19 +1000,23 @@ hr {
   margin-bottom: 14px;
 }
 .points-btn {
-  background: #fff;
-  color: #222;
-  border: 2px solid #e5e7eb;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  color: #fff;
+  font-weight: 700;
+  border: 2px solid #a855f7;
   border-radius: 8px;
   padding: 8px 16px;
-  font-weight: 600;
-  font-size: 1em;
+  font-size: 1.08em;
   cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(124,58,237,0.10);
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(60,0,80,0.18);
 }
 .points-btn:hover {
-  border-color: var(--avatar-color, #7c3aed);
-  box-shadow: 0 0 0 2px var(--avatar-color, #7c3aed);
+  border-color: #8b27c4;
+  box-shadow: 0 0 0 4px #8b27c4, 0 2px 12px rgba(124,58,237,0.18);
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
 }
 .points-cancel-btn {
   background: #f3f4f6;
