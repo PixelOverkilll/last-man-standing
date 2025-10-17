@@ -81,6 +81,11 @@
         <p class="game-subtitle">Das ultimative Quiz-Duell</p>
       </div>
 
+      <!-- DEV: Schnellzugriff zum Testen der Host-Buttons (nur lokal) -->
+      <div class="dev-test" style="margin:12px 0; text-align:center;">
+        <a href="lobby.html?code=TEST&forceHost=1" id="dev-open-test-lobby" class="btn btn-primary" style="padding:10px 20px; font-weight:800;">Dev: Test Lobby (Host)</a>
+      </div>
+
       <!-- Discord Login Section -->
       <div class="welcome-section" id="login-section">
         <div class="discord-login-card">
@@ -166,6 +171,14 @@
           <span class="feature-text">Der Letzte gewinnt</span>
         </div>
       </div>
+
+      <!-- Punkte & Quiz-Buttons -->
+      <div class="quiz-action-section" style="text-align:center; margin:32px 0 0 0;">
+        <div id="score-display" style="font-size:2rem; font-weight:700; margin-bottom:16px;">Punkte: <span id="score-value">0</span></div>
+        <button id="btn-correct" class="btn btn-correct" style="margin:0 12px 0 0; padding:12px 32px; font-size:1.2rem; font-weight:700; background:#2ecc40; color:#fff; border:none; border-radius:8px; cursor:pointer;">RICHTIG</button>
+        <button id="btn-wrong" class="btn btn-wrong" style="padding:12px 32px; font-size:1.2rem; font-weight:700; background:#ff4136; color:#fff; border:none; border-radius:8px; cursor:pointer;">FALSCH</button>
+      </div>
+      <div id="flash-overlay" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:9999; pointer-events:none;"></div>
     </div>
   </div>
 

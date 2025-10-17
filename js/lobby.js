@@ -460,7 +460,34 @@ document.addEventListener('DOMContentLoaded', async function() {
   cleanupPointsSidebarInlineStyles();
 
   const urlParams = new URLSearchParams(window.location.search);
-  const urlLobbyCode = urlParams.get('code');
+  let urlLobbyCode = urlParams.get('code');
+
+  // Test-Fallback: wenn ?forceHost=1 oder ?forceHost=true gesetzt ist, setze localStorage.isHost (nur für Debug/Test)
+  const forceHost = urlParams.get('forceHost') === '1' || urlParams.get('forceHost') === 'true';
+  if (forceHost) {
+    console.log('🛠️ forceHost detected in URL, enabling host UI for testing');
+    localStorage.setItem('isHost', 'true');
+  }
+
+  // Debug-Fallback: falls forceHost gesetzt wurde und kein Discord-User vorhanden ist, lege einen Dummy-User an (nur für lokale Tests)
+  if (forceHost && !localStorage.getItem('discordUser')) {
+    const debugUser = {
+      id: 'debug-host',
+      username: 'HostDebug',
+      discriminator: '0001',
+      avatar: null,
+      global_name: 'HostDebug'
+    };
+    localStorage.setItem('discordUser', JSON.stringify(debugUser));
+    console.log('🛠️ Debug Discord user created for testing (localStorage.discordUser)');
+  }
+
+  // Wenn forceHost gesetzt ist, aber kein code in der URL, setze einen Test-Lobby-Code damit die Lobby-UI nicht abbricht
+  if (forceHost && !urlLobbyCode) {
+    urlLobbyCode = 'TEST';
+    localStorage.setItem('lobbyCode', urlLobbyCode);
+    console.log('🛠️ forceHost: no code in URL, using test lobby code:', urlLobbyCode);
+  }
 
   const storedLobbyCode = localStorage.getItem('lobbyCode');
   const storedIsHost = localStorage.getItem('isHost');

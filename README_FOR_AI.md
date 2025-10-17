@@ -187,12 +187,34 @@ Design / Verhalten
 - Farben: Richtig = `rgba(34,197,94,0.92)` (grün), Falsch = `rgba(239,68,68,0.92)` (rot).
 - Accessibility: Overlay verwendet `pointer-events: none` so dass Interaktionen nicht blockiert werden; Host-Buttons sind normal erreichbar.
 
+Debug / Schnelltest-Helfer (neu)
+--------------------------------
+- Für schnelles Testen ohne den kompletten Login-/Lobby-Flow gibt es jetzt einen Test-Helfer in `js/lobby.js`:
+  - Wenn du `lobby.html` mit dem Query-Parameter `?forceHost=1` (oder `?forceHost=true`) aufrufst, wird automatisch `localStorage.isHost = 'true'` gesetzt.
+  - Falls kein Discord-User in `localStorage.discordUser` existiert, legt das Script für lokale Tests einen Debug-Dummy-User (`HostDebug`) an, damit die Host-Controls sofort sichtbar sind.
+  - Beispiel-URL zum Testen lokal: `lobby.html?code=TEST&forceHost=1`
+
+Hinweis: Diese Debug-Hilfen sind nur für lokale Tests gedacht. Entferne oder deaktiviere sie vor Production-Einsatz, falls du sie nicht möchtest.
+
 Safety / Hinweise
 - Broadcast-Nachrichten sind nur kleine Steuerbefehle (kein Transfer von sensiblen Daten).
 - Wenn die P2P-Verbindung instabil ist, funktioniert der Host-Lokal-Flash immer noch (Host sieht sein eigenes Feedback); Clients bekommen ggf. kein Signal.
 
-Test- und Prüf-Anleitung
-1) Erstelle Lobby als Host (wie zuvor). Die Host-Knöpfe erscheinen in `.host-controls`.
-2) Host klickt "Richtig" oder "Falsch": Bildschirm sollte kurz grün bzw. rot aufblitzen.
-3) Clients in der Lobby sollten das gleiche Flash sehen, wenn sie verbunden sind.
-4) Console/Network: In DevTools siehst du in der Console das gesendete Broadcast-Event (`screen-flash`).
+Test- und Prüf-Anleitung (Update)
+1) Schneller Test ohne Login:
+   - Öffne im Browser: `http://localhost:8000/lobby.html?code=TEST&forceHost=1` (oder lokal per file + setze localStorage manuell, siehe unten).
+   - Host-Controls (inkl. ✅ Richtig / ❌ Falsch) sollten sichtbar werden.
+   - Klicke auf einen der Knöpfe — Bildschirm blinkt kurz in der jeweiligen Farbe.
+
+2) Manuelle localStorage-Variante:
+   - In DevTools Console (falls kein `forceHost`):
+     ```javascript
+     localStorage.setItem('isHost', 'true');
+     localStorage.setItem('lobbyCode', 'TEST');
+     localStorage.setItem('discordUser', JSON.stringify({ id:'debug-host', username:'HostDebug', discriminator:'0001', avatar:null, global_name:'HostDebug' }));
+     location.search = '?code=TEST';
+     ```
+
+3) Voller Flow:
+   - Erstelle Lobby über `index.html` (Admin-Passwort `PXL339`) und trete mit einem zweiten Client bei.
+   - Host klickt `Richtig`/`Falsch` — Clients erhalten das `screen-flash` Broadcast und spielen das Flash lokal ab.

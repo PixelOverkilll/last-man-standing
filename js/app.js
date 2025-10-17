@@ -461,6 +461,44 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // --- Quiz-Button-Logik ---
+  let score = 0;
+  const scoreValue = document.getElementById('score-value');
+  const btnCorrect = document.getElementById('btn-correct');
+  const btnWrong = document.getElementById('btn-wrong');
+  const flashOverlay = document.getElementById('flash-overlay');
+
+  function updateScore(val) {
+    score += val;
+    if (score < 0) score = 0;
+    scoreValue.textContent = score;
+  }
+
+  function flashScreen(color) {
+    flashOverlay.style.background = color;
+    flashOverlay.style.opacity = '0.7';
+    flashOverlay.style.display = 'block';
+    setTimeout(() => {
+      flashOverlay.style.transition = 'opacity 0.4s';
+      flashOverlay.style.opacity = '0';
+      setTimeout(() => {
+        flashOverlay.style.display = 'none';
+        flashOverlay.style.transition = '';
+      }, 400);
+    }, 180);
+  }
+
+  if (btnCorrect && btnWrong) {
+    btnCorrect.addEventListener('click', function() {
+      updateScore(1);
+      flashScreen('#2ecc40'); // grün
+    });
+    btnWrong.addEventListener('click', function() {
+      updateScore(-1);
+      flashScreen('#ff4136'); // rot
+    });
+  }
+
   // Initialize the app
   init();
 });
