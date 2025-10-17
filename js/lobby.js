@@ -643,7 +643,7 @@ function showPointsSidebar(primaryColor) {
   if (primaryColor) {
     sidebar.style.border = `4px solid ${primaryColor}`;
     sidebar.style.boxShadow = `-8px 0 32px ${primaryColor}33`;
-    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    sidebar.style.background = 'linear-gradient(135deg, #2d0a4b 80%, #7c3aed 100%)';
     sidebar.style.transition = 'border 0.2s, box-shadow 0.2s, background 0.2s';
     // Buttons: Umrandung beim Hover
     sidebar.querySelectorAll('.points-btn').forEach(btn => {
@@ -652,17 +652,17 @@ function showPointsSidebar(primaryColor) {
         btn.style.boxShadow = `0 0 0 2px ${primaryColor}`;
       };
       btn.onmouseleave = () => {
-        btn.style.borderColor = '#e5e7eb';
+        btn.style.borderColor = '#fff';
         btn.style.boxShadow = 'none';
       };
-      btn.style.borderColor = '#e5e7eb';
-      btn.style.background = '#fff';
-      btn.style.color = '#222';
+      btn.style.borderColor = '#fff';
+      btn.style.background = 'linear-gradient(135deg, #8b27c4 60%, #7c3aed 100%)';
+      btn.style.color = '#fff';
     });
   } else {
     sidebar.style.border = '4px solid #7c3aed';
     sidebar.style.boxShadow = '-8px 0 32px #7c3aed33';
-    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    sidebar.style.background = 'linear-gradient(135deg, #2d0a4b 80%, #7c3aed 100%)';
   }
   sidebar.style.display = 'block';
 }
@@ -865,7 +865,7 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Neue Hilfsfunktion: wendet die gespeicherte Hintergrundklasse an
+// Neue Hilfsfunktion: wendet die gespeicherte Hintergrundsklasse an
 function applySavedBackground() {
   try {
     const bgType = localStorage.getItem('backgroundStyle') || 'checkerboard';
