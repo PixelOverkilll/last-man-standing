@@ -649,6 +649,37 @@ body.bg-waves::before {
   filter: grayscale(0.5);
 }
 
+/* Punkte-Leiste: dezentes Design, dynamische Umrandung/Schatten */
+.player-score {
+  background: rgba(255,255,255,0.85);
+  border: 2px solid var(--avatar-color, #7c3aed);
+  box-shadow: 0 2px 12px 0 rgba(var(--avatar-rgb, 124,58,237), 0.15);
+  color: #222;
+  border-radius: 12px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 1.1em;
+  margin-bottom: 10px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Buttons in der Punkte-Leiste */
+.player-score .btn {
+  background: #fff;
+  color: #222;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-weight: 500;
+  margin: 0 4px;
+  box-shadow: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.player-score .btn:hover {
+  border-color: var(--avatar-color, #7c3aed);
+  box-shadow: 0 0 0 2px var(--avatar-color, #7c3aed);
+}
+
 /* Game Features - VERBESSERT */
 .game-features {
   display: grid;

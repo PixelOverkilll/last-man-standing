@@ -85,7 +85,23 @@ Schnelle Prüf- und Fortsetzungs-Checklist für die nächste KI
 
 8. Wichtige Git-Hashes (Referenz)
    - Aktueller Ziel-Commit (Stand dieser Übergabe): `2010b46bcb17c4686acfd1c6ab2ed1f0cfbd367e` (main)
-   - Falls du die Änderung, die wir kurz committed hatten, wiederfinden willst: suche nach älteren Commits in `git reflog` oder `git log --all --grep="bg"`.
+   - Falls du die Änderung, die wir kurz committed hatten, wiederfinden willst, suche nach älteren Commits in `git reflog` oder `git log --all --grep="bg"`.
+
+Neues Punktesystem-Design (Oktober 2025)
+----------------------------------------
+- Die Punkte-Leiste (.player-score) und die Buttons sind jetzt optisch ruhiger und besser integriert.
+- Die Primärfarbe des Discord-Avatars des ausgewählten Spielers wird per JS als CSS-Variable (--avatar-color, --avatar-rgb) auf der Spielerkarte gesetzt.
+- Die Punkte-Leiste nutzt diese Variable für Umrandung und Schatten, der Hintergrund ist hell und dezent.
+- Buttons in der Leiste sind neutral (weiß/grau) und erhalten beim Hover die Avatar-Farbe als Umrandung.
+- Die Logik zur Farbextraktion und Variablen-Setzung befindet sich in lobby.js (applyPlayerColor).
+- Das Styling erfolgt in style.css, die Leiste und Buttons greifen auf die CSS-Variable zu.
+- Die Leiste bleibt rechts, ist aber optisch ruhiger und besser integriert.
+- Test: Beim Spielerwechsel passt sich die Leiste dynamisch an.
+
+Für zukünftige KIs:
+- Die Avatar-Farbe kann für weitere UI-Elemente als CSS-Variable genutzt werden.
+- Erweiterungen am Punktesystem sollten die CSS-Variable und die bestehenden Klassen verwenden.
+- Visuelle Tests: Spieler wechseln, Punkte vergeben, Hover-Effekte prüfen.
 
 Kommunikation & Sicherheit
 --------------------------
@@ -105,4 +121,3 @@ Kontakt/Meta
 - Autor: Generiert als Übergabeinstruktion für die nächste KI
 
 ENDE
-

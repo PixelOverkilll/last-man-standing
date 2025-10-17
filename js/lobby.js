@@ -123,6 +123,10 @@ function hslToRgb(h, s, l) {
 function applyPlayerColor(playerCard, color) {
   const rgb = color.match(/\d+/g).map(Number);
 
+  // Setze CSS-Variablen für Avatar-Farbe
+  playerCard.style.setProperty('--avatar-color', color);
+  playerCard.style.setProperty('--avatar-rgb', `${rgb[0]},${rgb[1]},${rgb[2]}`);
+
   playerCard.style.borderColor = color;
   playerCard.style.boxShadow = `0 15px 40px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
 
@@ -132,11 +136,12 @@ function applyPlayerColor(playerCard, color) {
     avatar.style.boxShadow = `0 0 25px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9)`;
   }
 
-  const scoreElement = playerCard.querySelector('.player-score');
-  if (scoreElement) {
-    scoreElement.style.borderColor = color;
-    scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
-  }
+  // Punkte-Leiste nutzt jetzt CSS-Variable, keine direkte Style-Zuweisung mehr
+  // const scoreElement = playerCard.querySelector('.player-score');
+  // if (scoreElement) {
+  //   scoreElement.style.borderColor = color;
+  //   scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+  // }
 }
 
 // ========================================
@@ -596,11 +601,18 @@ function selectPlayerForPoints(playerId) {
   if (card) {
     card.classList.add('selected-player');
   }
-  showPointsSidebar();
+  // Avatar-Farbe berechnen und an Sidebar übergeben
+  const player = players.get(playerId);
+  if (player) {
+    extractDominantColor(player.avatar, (color) => {
+      showPointsSidebar(color);
+    });
+  } else {
+    showPointsSidebar();
+  }
 }
 
-function showPointsSidebar() {
-  // Falls Sidebar schon existiert, nur anzeigen
+function showPointsSidebar(primaryColor) {
   let sidebar = document.getElementById('points-sidebar');
   if (!sidebar) {
     sidebar = document.createElement('div');
@@ -614,7 +626,6 @@ function showPointsSidebar() {
       <button class="points-cancel-btn">Abbrechen</button>
     `;
     document.body.appendChild(sidebar);
-    // Event-Delegation für Buttons
     sidebar.addEventListener('click', (e) => {
       if (e.target.classList.contains('points-btn')) {
         const val = parseInt(e.target.getAttribute('data-points'), 10);
@@ -627,6 +638,31 @@ function showPointsSidebar() {
         hidePointsSidebar();
       }
     });
+  }
+  // Setze die Primärfarbe als Umrandung/Schatten
+  if (primaryColor) {
+    sidebar.style.border = `4px solid ${primaryColor}`;
+    sidebar.style.boxShadow = `-8px 0 32px ${primaryColor}33`;
+    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    sidebar.style.transition = 'border 0.2s, box-shadow 0.2s, background 0.2s';
+    // Buttons: Umrandung beim Hover
+    sidebar.querySelectorAll('.points-btn').forEach(btn => {
+      btn.onmouseenter = () => {
+        btn.style.borderColor = primaryColor;
+        btn.style.boxShadow = `0 0 0 2px ${primaryColor}`;
+      };
+      btn.onmouseleave = () => {
+        btn.style.borderColor = '#e5e7eb';
+        btn.style.boxShadow = 'none';
+      };
+      btn.style.borderColor = '#e5e7eb';
+      btn.style.background = '#fff';
+      btn.style.color = '#222';
+    });
+  } else {
+    sidebar.style.border = '4px solid #7c3aed';
+    sidebar.style.boxShadow = '-8px 0 32px #7c3aed33';
+    sidebar.style.background = 'rgba(255,255,255,0.97)';
   }
   sidebar.style.display = 'block';
 }
