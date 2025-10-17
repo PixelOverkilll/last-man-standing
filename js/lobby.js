@@ -148,11 +148,48 @@ function applyPlayerColor(playerCard, color) {
 // P2P FUNKTIONEN
 // ========================================
 
+// Zentrale Cleanup-Funktion: schließt alle Verbindungen und zerstört den Peer
+function cleanupConnections() {
+  try {
+    // Schließe alle Client-Verbindungen
+    if (connections && connections.size > 0) {
+      for (const [id, c] of Array.from(connections.entries())) {
+        try { c.close(); } catch (e) { /* ignore */ }
+      }
+      connections.clear();
+    }
+
+    // Schließe Host-Verbindung (Client-Seite)
+    if (hostConnection) {
+      try { hostConnection.close(); } catch (e) { /* ignore */ }
+      hostConnection = null;
+    }
+
+    // Zerstöre Peer-Objekt
+    if (peer) {
+      try { peer.destroy(); } catch (e) { /* ignore */ }
+      peer = null;
+    }
+
+    // UI/State zurücksetzen
+    players.clear();
+    const playersContainer = document.getElementById('players-container');
+    if (playersContainer) playersContainer.innerHTML = '';
+    localStorage.removeItem('lobbyCode');
+    localStorage.removeItem('isHost');
+  } catch (e) {
+    console.warn('Fehler beim Cleanup der Verbindungen', e);
+  }
+}
+
 // Host erstellt Lobby
 async function createLobby(code) {
   console.log('🎮 Erstelle P2P-Lobby als Host mit Code:', code);
 
   return new Promise((resolve, reject) => {
+    // Falls bereits eine Peer-Instanz existiert (z.B. durch Reload), räumen wir vorher auf
+    cleanupConnections();
+
     // Erstelle Peer mit dem übergebenen Lobby-Code als ID
     peer = new Peer(code, {
       debug: 1,
@@ -193,6 +230,9 @@ async function joinLobby(code) {
   console.log('🔗 Verbinde mit Lobby:', code);
 
   return new Promise((resolve, reject) => {
+    // Aufräumen falls alte Instanz noch existiert
+    cleanupConnections();
+
     // Erstelle Peer mit zufälliger ID
     peer = new Peer({
       debug: 2,
@@ -306,6 +346,12 @@ function setupConnection(conn, isToHost) {
 
   conn.on('error', (error) => {
     console.error('❌ Connection Error:', error);
+    // Versuche die Verbindung zu schließen, damit der 'close'-Handler greift
+    try {
+      conn.close();
+    } catch (e) {
+      console.warn('Fehler beim Schließen der fehlerhaften Connection', e);
+    }
   });
 }
 
@@ -412,11 +458,23 @@ function handleDisconnect(conn) {
 function broadcast(data, excludeId = null) {
   if (!isHost) return;
 
-  connections.forEach((conn, playerId) => {
-    if (playerId !== excludeId && conn.open) {
-      conn.send(data);
+  // Iteriere sicher und entferne geschlossene/verwaiste Conns
+  for (const [playerId, conn] of Array.from(connections.entries())) {
+    if (playerId === excludeId) continue;
+    if (conn && conn.open) {
+      try {
+        conn.send(data);
+      } catch (e) {
+        console.warn('Fehler beim Senden an', playerId, e);
+      }
+    } else {
+      // Entferne geschlossene Verbindungen aus der Map
+      connections.delete(playerId);
+      // Entferne auch DOM-Eintrag falls vorhanden
+      removePlayerFromDOM(playerId);
+      players.delete(playerId);
     }
-  });
+  }
 }
 
 // Nachricht an Host senden (Spieler)
@@ -773,20 +831,8 @@ function setupEventListeners() {
 function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
-  // Verbindungen schließen
-  if (isHost) {
-    connections.forEach((conn) => conn.close());
-    connections.clear();
-  } else if (hostConnection) {
-    hostConnection.close();
-  }
-
-  if (peer) {
-    peer.destroy();
-  }
-
-  localStorage.removeItem('lobbyCode');
-  localStorage.removeItem('isHost');
+  // Zentrales Cleanup durchführen
+  cleanupConnections();
 
   showNotification('Lobby verlassen', 'info', 500);
   setTimeout(() => window.location.href = 'index.html', 500);
