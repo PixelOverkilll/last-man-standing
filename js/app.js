@@ -465,18 +465,23 @@ document.addEventListener('DOMContentLoaded', function() {
   let score = 0;
   const scoreValue = document.getElementById('score-value');
   const scoreValueSidebar = document.getElementById('score-value-sidebar');
+  const scoreValueTest = document.getElementById('score-value-test');
   const btnCorrect = document.getElementById('btn-correct');
   const btnWrong = document.getElementById('btn-wrong');
   const flashOverlay = document.getElementById('flash-overlay');
   // Sidebar buttons (falls vorhanden)
   const pointsBtnCorrect = document.getElementById('points-btn-correct');
   const pointsBtnWrong = document.getElementById('points-btn-wrong');
+  // Debug test panel buttons
+  const testBtnCorrect = document.getElementById('test-btn-correct');
+  const testBtnWrong = document.getElementById('test-btn-wrong');
 
   function updateScore(val) {
     score += val;
     if (score < 0) score = 0;
     if (scoreValue) scoreValue.textContent = score;
     if (scoreValueSidebar) scoreValueSidebar.textContent = score;
+    if (scoreValueTest) scoreValueTest.textContent = score;
   }
 
   function flashScreen(color) {
@@ -517,6 +522,21 @@ document.addEventListener('DOMContentLoaded', function() {
       flashScreen('#ff4136');
     });
   }
+
+  // Test-Panel Buttons (großes zentrales Debug-Panel)
+  if (testBtnCorrect) {
+    testBtnCorrect.addEventListener('click', function() {
+      flashScreen('#2ecc40');
+    });
+  }
+  if (testBtnWrong) {
+    testBtnWrong.addEventListener('click', function() {
+      flashScreen('#ff4136');
+    });
+  }
+
+  // Initial sync for the test display
+  if (scoreValueTest) scoreValueTest.textContent = score;
 
   // Initialize the app
   init();

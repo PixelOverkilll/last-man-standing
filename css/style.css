@@ -1036,7 +1036,7 @@ hr {
   border: 4px solid var(--avatar-color, #7c3aed);
   box-shadow: -8px 0 32px rgba(var(--avatar-rgb,124,58,237),0.18);
   border-radius: 18px;
-  z-index: 1000;
+  z-index: 5000; /* sicher über anderen Elementen */
   padding: 22px 18px 18px 18px;
   transition: border 0.2s, box-shadow 0.2s, background 0.2s;
   backdrop-filter: blur(6px);
@@ -1075,4 +1075,32 @@ hr {
   border-color: #5b21b6 !important;
   box-shadow: 0 6px 20px rgba(60,0,80,0.22) !important;
   text-shadow: 0 2px 8px rgba(60,0,80,0.28) !important;
+}
+
+/* Debug/Test Box für Punkte-Elemente (sichtbar beim Testen) */
+.debug-points-box {
+  border: 3px dashed #ffde59; /* auffälliges Gelb */
+  background: rgba(0,0,0,0.45);
+  padding: 12px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 6px rgba(255,222,89,0.06);
+  z-index: 4999; /* knapp unter der Sidebar, sichtbar */
+}
+
+/* Stelle sicher, dass Sidebar-Buttons sichtbar sind */
+.points-sidebar .points-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 18px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff7b7b 0%, #ff4136 100%);
+  border: 2px solid #ff4136;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.points-sidebar .points-btn + .points-btn {
+  margin-top: 8px;
 }

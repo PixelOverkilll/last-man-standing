@@ -218,3 +218,39 @@ Test- und Prüf-Anleitung (Update)
 3) Voller Flow:
    - Erstelle Lobby über `index.html` (Admin-Passwort `PXL339`) und trete mit einem zweiten Client bei.
    - Host klickt `Richtig`/`Falsch` — Clients erhalten das `screen-flash` Broadcast und spielen das Flash lokal ab.
+
+Aktuelle Änderungen (UI: Punkte-Buttons & Debug-Box)
+--------------------------------------------------
+Datum: 2025-10-17
+
+Kurz:
+- Sichtbare Punkte-Sidebar mit zwei Buttons "RICHTIG" und "FALSCH" hinzugefügt.
+- Zusätzliche Buttons bleiben im Haupt-Content erhalten (ebenfalls RICHTIG/FALSCH) — aktuell lösen alle Buttons nur noch einen visuellen Flash-Effekt aus (grün für RICHTIG, rot für FALSCH).
+- Der "FALSCH"-Button zieht keine Punkte mehr ab; Punkte müssen weiterhin manuell vergeben werden.
+- Zur Sichtbarkeit beim Testen wurden gelbe Debug-Kästen (CSS-Klasse `debug-points-box`) um die Punkte-Elemente gelegt.
+
+Geänderte Dateien:
+- `index.html`
+  - Neue Sidebar `<aside class="points-sidebar debug-points-box" id="points-sidebar">` mit Punkteanzeige (`#score-value-sidebar`) und Buttons `#points-btn-correct` / `#points-btn-wrong`.
+  - Hauptbereich: `.quiz-action-section` trägt jetzt testweise die Klasse `debug-points-box` (sichtbarer gelber Rahmen).
+- `js/app.js`
+  - Event-Handler für alle Bewertungsbuttons (`btn-correct`, `btn-wrong`, `points-btn-correct`, `points-btn-wrong`) so geändert, dass sie nur `flashScreen(color)` auslösen und keine automatische Punkteanpassung vornehmen.
+  - `updateScore` und `score-value` bleiben im Code, für manuelle Vergabe per UI oder späteren Control-Buttons.
+- `css/style.css`
+  - Neue Debug-Styles `.debug-points-box` (auffälliger gelber gestrichelter Kasten) und Anpassungen für `.points-sidebar .points-btn` (sichere Sichtbarkeit).
+
+Wie du lokal testest (Windows cmd.exe):
+1. Öffne das Projektverzeichnis:
+   cd "C:\Users\Crave\IdeaProjects\Last man standing"
+2. Öffne die Startseite im Standardbrowser:
+   start index.html
+3. Sichtprüfung:
+   - Du solltest einen gelben gestrichelten Kasten um die Punkte-Anzeige im Hauptcontent sehen.
+   - Rechts sollte eine Sidebar mit gelbem Kasten erscheinen (Punkte + zwei Buttons RICHTIG/FALSCH).
+   - Klick auf RICHTIG → Bildschirm blinkt kurz grün; Klick auf FALSCH → blinkt kurz rot.
+   - Zahlen ändern sich nicht automatisch.
+
+Git / Branch / Commit:
+- Branch: feat/host-screen-flash
+- Letzter Commit (UI & Debug): 37a8489
+- Falls du weitere Änderungen wünschst (z. B. Entfernen der Debug-Box, nur eine Button-Position, manuelle +/− Controls), antworte kurz und ich implementiere es.

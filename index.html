@@ -173,7 +173,7 @@
       </div>
 
       <!-- Punkte & Quiz-Buttons -->
-      <div class="quiz-action-section" style="text-align:center; margin:32px 0 0 0;">
+      <div class="quiz-action-section debug-points-box" style="text-align:center; margin:32px 0 0 0;">
         <div id="score-display" style="font-size:2rem; font-weight:700; margin-bottom:16px;">Punkte: <span id="score-value">0</span></div>
         <button id="btn-correct" class="btn btn-correct" style="margin:0 12px 0 0; padding:12px 32px; font-size:1.2rem; font-weight:700; background:#2ecc40; color:#fff; border:none; border-radius:8px; cursor:pointer;">RICHTIG</button>
         <button id="btn-wrong" class="btn btn-wrong" style="padding:12px 32px; font-size:1.2rem; font-weight:700; background:#ff4136; color:#fff; border:none; border-radius:8px; cursor:pointer;">FALSCH</button>
@@ -183,11 +183,24 @@
   </div>
 
   <!-- Points Sidebar (sichtbar neben der Seite) -->
-  <aside class="points-sidebar" id="points-sidebar">
+  <aside class="points-sidebar debug-points-box" id="points-sidebar" style="position:fixed; top:80px; right:32px; z-index:6000; display:block; background:rgba(0,0,0,0.65); border:3px solid #ffbf00;">
     <div class="player-score" style="text-align:center; margin-bottom:12px;">Punkte: <strong id="score-value-sidebar">0</strong></div>
-    <button class="points-btn" id="points-btn-correct" style="margin-bottom:8px;">RICHTIG</button>
-    <button class="points-btn" id="points-btn-wrong">FALSCH</button>
+    <button class="points-btn" id="points-btn-correct" style="margin-bottom:8px; padding:14px 20px; font-weight:900; font-size:1.1rem; background:#ffde59; color:#111; border:3px solid #ffbf00;">RICHTIG</button>
+    <button class="points-btn" id="points-btn-wrong" style="padding:14px 20px; font-weight:900; font-size:1.1rem; background:#ff7b00; color:#111; border:3px solid #ffbf00;">FALSCH</button>
   </aside>
+
+  <!-- DEBUG: Großes zentriertes Test-Panel (temporär) -->
+  <div id="debug-test-panel" class="debug-test-panel" aria-hidden="false" style="position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); z-index:6001; background:rgba(255,255,255,0.95); padding:20px; border-radius:12px; border:3px solid #ffbf00; display:block;">
+    <div class="debug-test-content">
+      <div style="font-size:1.6rem; font-weight:800; margin-bottom:10px;">TEST-PANEL: Sichtbarkeit prüfen</div>
+      <div style="font-size:1.25rem; margin-bottom:12px;">Punkte: <span id="score-value-test">0</span></div>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button id="test-btn-correct" class="btn btn-correct">RICHTIG</button>
+        <button id="test-btn-wrong" class="btn btn-wrong">FALSCH</button>
+      </div>
+      <div style="margin-top:10px; font-size:0.9rem; color:#111;">(Dieses Panel ist nur zum Testen — ich entferne es wieder, wenn alles sichtbar ist.)</div>
+    </div>
+  </div>
 
   <script src="js/app.js"></script>
 
