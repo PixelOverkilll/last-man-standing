@@ -12,6 +12,7 @@ let players = new Map(); // playerId -> playerData
 let peer = null;
 let connections = new Map(); // playerId -> connection
 let hostConnection = null;
+let selectedPlayerId = null;
 
 // ========================================
 // FARBEXTRAKTION FÜR AVATARE
@@ -553,6 +554,11 @@ function addPlayerToDOM(player) {
     applyPlayerColor(card, color);
   });
 
+  card.addEventListener('click', () => {
+    if (!isHost) return;
+    selectPlayerForPoints(player.id);
+  });
+
   console.log('\u2795 Spieler zur DOM hinzugef\u00fcgt:', player.name);
 }
 
@@ -598,6 +604,61 @@ function handleGivePoints(playerId) {
   awardPoints(playerId, value);
 }
 
+function selectPlayerForPoints(playerId) {
+  // Entferne alte Markierung
+  document.querySelectorAll('.player-card.selected-player').forEach(card => {
+    card.classList.remove('selected-player');
+  });
+  selectedPlayerId = playerId;
+  const card = document.getElementById('player-' + playerId);
+  if (card) {
+    card.classList.add('selected-player');
+  }
+  showPointsSidebar();
+}
+
+function showPointsSidebar() {
+  // Falls Sidebar schon existiert, nur anzeigen
+  let sidebar = document.getElementById('points-sidebar');
+  if (!sidebar) {
+    sidebar = document.createElement('div');
+    sidebar.id = 'points-sidebar';
+    sidebar.className = 'points-sidebar';
+    sidebar.innerHTML = `
+      <div class="points-sidebar-title">Punkte vergeben</div>
+      <div class="points-btn-list">
+        ${[10, 20, 30, 40, 50].map(val => `<button class='points-btn' data-points='${val}'>${val}</button>`).join('')}
+      </div>
+      <button class="points-cancel-btn">Abbrechen</button>
+    `;
+    document.body.appendChild(sidebar);
+    // Event-Delegation für Buttons
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.classList.contains('points-btn')) {
+        const val = parseInt(e.target.getAttribute('data-points'), 10);
+        if (selectedPlayerId) {
+          awardPoints(selectedPlayerId, val);
+          hidePointsSidebar();
+        }
+      }
+      if (e.target.classList.contains('points-cancel-btn')) {
+        hidePointsSidebar();
+      }
+    });
+  }
+  sidebar.style.display = 'block';
+}
+
+function hidePointsSidebar() {
+  const sidebar = document.getElementById('points-sidebar');
+  if (sidebar) sidebar.style.display = 'none';
+  // Markierung entfernen
+  document.querySelectorAll('.player-card.selected-player').forEach(card => {
+    card.classList.remove('selected-player');
+  });
+  selectedPlayerId = null;
+}
+
 // Host-Funktion: Punkte vergeben und an Clients broadcasten
 function awardPoints(playerId, delta) {
   if (!isHost) return;
@@ -620,6 +681,7 @@ function awardPoints(playerId, delta) {
   });
 
   showNotification(`\u2705 ${player.name} erh\u00e4lt ${delta > 0 ? '+' + delta : delta} Punkte (insg. ${player.score})`, 'success', 1800);
+  hidePointsSidebar();
 }
 
 // ========================================

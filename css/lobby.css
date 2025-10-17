@@ -475,7 +475,101 @@ body.bg-waves {
   transform: translateY(-1px) scale(0.995);
 }
 
-/* Responsive: kleinere Buttons auf engen Bildschirmen */
+/* Punkte-Leiste für Host (rechts am Rand) */
+.points-sidebar {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  background: rgba(16,185,129,0.97);
+  box-shadow: -8px 0 32px rgba(16,185,129,0.18);
+  border-radius: 18px 0 0 18px;
+  padding: 32px 24px 24px 24px;
+  z-index: 300;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  animation: slideInSidebar 0.2s ease-out;
+}
+
+@keyframes slideInSidebar {
+  from { right: -180px; opacity: 0; }
+  to { right: 0; opacity: 1; }
+}
+
+.points-sidebar-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.points-btn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.points-btn {
+  background: #fff;
+  color: #16b981;
+  font-size: 1.15rem;
+  font-weight: 900;
+  border: 2px solid #16b981;
+  border-radius: 12px;
+  padding: 12px 0;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(16,185,129,0.12);
+  transition: background 0.15s, color 0.15s, transform 0.12s;
+  width: 100%;
+}
+
+.points-btn:hover {
+  background: #16b981;
+  color: #fff;
+  transform: scale(1.08);
+}
+
+.points-cancel-btn {
+  background: #ef4444;
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 0;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 10px;
+  box-shadow: 0 2px 8px rgba(239,68,68,0.12);
+  transition: background 0.15s, transform 0.12s;
+}
+
+.points-cancel-btn:hover {
+  background: #dc2626;
+  transform: scale(1.04);
+}
+
+/* Markierung für ausgewählte Spielerkarte */
+.player-card.selected-player {
+  border-color: #16b981 !important;
+  box-shadow: 0 0 0 4px #16b981, 0 15px 40px rgba(16,185,129,0.18);
+  background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(20, 10, 35, 0.98) 100%);
+}
+
+.player-card.selected-player .player-avatar {
+  border-color: #16b981 !important;
+  box-shadow: 0 0 25px #16b981;
+}
+
+.player-card.selected-player .player-score {
+  border-color: #16b981 !important;
+  background: rgba(16,185,129,0.18);
+}
+
 @media (max-width: 480px) {
   .give-points-btn {
     padding: 5px 8px;
