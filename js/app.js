@@ -464,17 +464,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // --- Quiz-Button-Logik ---
   let score = 0;
   const scoreValue = document.getElementById('score-value');
+  const scoreValueSidebar = document.getElementById('score-value-sidebar');
   const btnCorrect = document.getElementById('btn-correct');
   const btnWrong = document.getElementById('btn-wrong');
   const flashOverlay = document.getElementById('flash-overlay');
+  // Sidebar buttons (falls vorhanden)
+  const pointsBtnCorrect = document.getElementById('points-btn-correct');
+  const pointsBtnWrong = document.getElementById('points-btn-wrong');
 
   function updateScore(val) {
     score += val;
     if (score < 0) score = 0;
-    scoreValue.textContent = score;
+    if (scoreValue) scoreValue.textContent = score;
+    if (scoreValueSidebar) scoreValueSidebar.textContent = score;
   }
 
   function flashScreen(color) {
+    if (!flashOverlay) return;
     flashOverlay.style.background = color;
     flashOverlay.style.opacity = '0.7';
     flashOverlay.style.display = 'block';
@@ -488,14 +494,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 180);
   }
 
+  // Haupt-Buttons im Content (lösen nur noch Flash aus)
   if (btnCorrect && btnWrong) {
     btnCorrect.addEventListener('click', function() {
-      updateScore(1);
+      // Nur Leuchteffekt; Punkte werden weiterhin manuell vergeben
       flashScreen('#2ecc40'); // grün
     });
     btnWrong.addEventListener('click', function() {
-      updateScore(-1);
+      // Nur Leuchteffekt; keine automatische Punkteanpassung
       flashScreen('#ff4136'); // rot
+    });
+  }
+
+  // Sidebar-Buttons (sichtbar in der rechten Leiste) - optional, verhalten identisch
+  if (pointsBtnCorrect) {
+    pointsBtnCorrect.addEventListener('click', function() {
+      flashScreen('#2ecc40');
+    });
+  }
+  if (pointsBtnWrong) {
+    pointsBtnWrong.addEventListener('click', function() {
+      flashScreen('#ff4136');
     });
   }
 

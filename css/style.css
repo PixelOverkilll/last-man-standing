@@ -727,6 +727,59 @@ body.bg-waves::before {
   letter-spacing: 0.5px;
 }
 
+/* Quiz action buttons: make visible and mobile-friendly */
+.quiz-action-section {
+  position: relative;
+  z-index: 60; /* above decorative backgrounds */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.quiz-action-section .btn {
+  min-width: 160px;
+  padding: 12px 28px;
+  font-weight: 800;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.btn-correct:hover, .btn-wrong:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.6);
+}
+
+.btn-correct:active, .btn-wrong:active {
+  transform: translateY(0);
+}
+
+/* Accessibility: visible focus ring */
+.btn-correct:focus, .btn-wrong:focus {
+  outline: 3px solid rgba(255,255,255,0.08);
+  box-shadow: 0 0 0 4px rgba(124,58,237,0.18);
+}
+
+/* Make buttons full-width on small screens */
+@media (max-width: 520px) {
+  .quiz-action-section .btn {
+    width: calc(100% - 40px);
+    min-width: 0;
+  }
+  .quiz-action-section { gap: 8px; }
+}
+
+/* Flash overlay improvements */
+#flash-overlay {
+  transition: opacity 0.45s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Responsive Design - VERBESSERT */
 @media (max-width: 768px) {
   .start-container {
@@ -1023,4 +1076,3 @@ hr {
   box-shadow: 0 6px 20px rgba(60,0,80,0.22) !important;
   text-shadow: 0 2px 8px rgba(60,0,80,0.28) !important;
 }
-
