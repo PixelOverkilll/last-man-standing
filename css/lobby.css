@@ -429,10 +429,10 @@ body.bg-waves {
 }
 
 .player-score {
-  color: #ffffff;
+  background: linear-gradient(135deg, #7c3aed 80%, #2d0a4b 100%);
+  color: #fff;
   font-size: 1rem;
   font-weight: 700;
-  background: rgba(124, 58, 237, 0.3);
   padding: 8px 20px;
   border-radius: 30px;
   border: 3px solid #7c3aed;
@@ -481,8 +481,8 @@ body.bg-waves {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  background: rgba(16,185,129,0.97);
-  box-shadow: -8px 0 32px rgba(16,185,129,0.18);
+  background: linear-gradient(135deg, #2d0a4b 80%, #7c3aed 100%);
+  box-shadow: -8px 0 32px rgba(44,0,80,0.18);
   border-radius: 18px 0 0 18px;
   padding: 32px 24px 24px 24px;
   z-index: 300;
@@ -515,23 +515,24 @@ body.bg-waves {
 }
 
 .points-btn {
-  background: #fff;
-  color: #16b981;
+  background: linear-gradient(135deg, #8b27c4 60%, #7c3aed 100%);
+  color: #fff;
   font-size: 1.15rem;
   font-weight: 900;
-  border: 2px solid #16b981;
+  border: 2px solid #fff;
   border-radius: 12px;
   padding: 12px 0;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(16,185,129,0.12);
-  transition: background 0.15s, color 0.15s, transform 0.12s;
+  box-shadow: 0 4px 16px rgba(44,0,80,0.12);
+  transition: background 0.15s, color 0.15s, transform 0.12s, box-shadow 0.12s;
   width: 100%;
 }
 
 .points-btn:hover {
-  background: #16b981;
+  background: #7c3aed;
   color: #fff;
-  transform: scale(1.08);
+  transform: scale(1.06);
+  box-shadow: 0 8px 24px rgba(44,0,80,0.18);
 }
 
 .points-cancel-btn {
@@ -553,21 +554,36 @@ body.bg-waves {
   transform: scale(1.04);
 }
 
-/* Markierung für ausgewählte Spielerkarte */
+/* Markierung für ausgewählte Spielerkarte (farblich an Theme angepasst) */
 .player-card.selected-player {
-  border-color: #16b981 !important;
-  box-shadow: 0 0 0 4px #16b981, 0 15px 40px rgba(16,185,129,0.18);
-  background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(20, 10, 35, 0.98) 100%);
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 4px rgba(124,58,237,0.22), 0 15px 40px rgba(44,0,80,0.18);
+  background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(20, 10, 35, 0.98) 100%);
 }
 
 .player-card.selected-player .player-avatar {
-  border-color: #16b981 !important;
-  box-shadow: 0 0 25px #16b981;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 25px #7c3aed;
 }
 
 .player-card.selected-player .player-score {
-  border-color: #16b981 !important;
-  background: rgba(16,185,129,0.18);
+  border-color: #7c3aed !important;
+  background: rgba(124,58,237,0.18);
+  color: #fff;
+}
+
+/* Punkte-Anzeige: konsistent mit globaler style.css (dunkel, kontrastreich) */
+.player-score {
+  background: linear-gradient(135deg, #7c3aed 80%, #2d0a4b 100%);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 30px;
+  border: 3px solid #7c3aed;
+  position: relative;
+  z-index: 1;
+  transition: all 0.3s ease;
 }
 
 @media (max-width: 480px) {
