@@ -652,10 +652,10 @@ function showPointsSidebar(primaryColor) {
         btn.style.boxShadow = `0 0 0 2px ${primaryColor}`;
       };
       btn.onmouseleave = () => {
-        btn.style.borderColor = '#fff';
+        btn.style.borderColor = 'rgba(255,255,255,0.12)';
         btn.style.boxShadow = 'none';
       };
-      btn.style.borderColor = '#fff';
+      btn.style.borderColor = 'rgba(255,255,255,0.12)';
       btn.style.background = 'linear-gradient(135deg, #8b27c4 60%, #7c3aed 100%)';
       btn.style.color = '#fff';
     });

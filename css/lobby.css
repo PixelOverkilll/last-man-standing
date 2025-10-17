@@ -46,8 +46,8 @@ body.bg-gradient {
 body.bg-dots {
   background-color: #111827;
   background-image:
-    radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+    radial-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+    radial-gradient(rgba(124,58,237,0.02) 1px, transparent 1px);
   background-size: 20px 20px, 40px 40px;
   background-position: 0 0, 10px 10px;
 }
@@ -572,19 +572,8 @@ body.bg-waves {
   color: #fff;
 }
 
-/* Punkte-Anzeige: konsistent mit globaler style.css (dunkel, kontrastreich) */
-.player-score {
-  background: linear-gradient(135deg, #7c3aed 80%, #2d0a4b 100%);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 700;
-  padding: 8px 20px;
-  border-radius: 30px;
-  border: 3px solid #7c3aed;
-  position: relative;
-  z-index: 1;
-  transition: all 0.3s ease;
-}
+/* Punkte-Anzeige: zentral in css/style.css definiert - entfernte Duplikate hier */
+/* .player-score wird jetzt in css/style.css gepflegt */
 
 @media (max-width: 480px) {
   .give-points-btn {
