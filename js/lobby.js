@@ -922,6 +922,36 @@ function setupEventListeners() {
       console.log('📣 Host sendet screen-flash (incorrect)');
     });
   }
+
+  // Neue globale Main-Buttons (sichtbar für alle, nicht nur Host)
+  const mainBtnCorrect = document.getElementById('main-btn-correct');
+  const mainBtnWrong = document.getElementById('main-btn-wrong');
+
+  if (mainBtnCorrect) {
+    mainBtnCorrect.addEventListener('click', () => {
+      // Lokaler Flash-Effekt
+      const color = 'rgba(34,197,94,0.92)';
+      const duration = 700;
+      triggerScreenFlash(color, duration);
+      // Wenn Host: Broadcast senden
+      if (isHost) {
+        broadcast({ type: 'screen-flash', color, duration });
+      }
+      console.log('Main button correct clicked');
+    });
+  }
+
+  if (mainBtnWrong) {
+    mainBtnWrong.addEventListener('click', () => {
+      const color = 'rgba(239,68,68,0.92)';
+      const duration = 700;
+      triggerScreenFlash(color, duration);
+      if (isHost) {
+        broadcast({ type: 'screen-flash', color, duration });
+      }
+      console.log('Main button wrong clicked');
+    });
+  }
 }
 
 function leaveLobby() {

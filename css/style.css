@@ -1133,3 +1133,28 @@ hr {
 .points-sidebar .points-btn + .points-btn {
   margin-top: 8px;
 }
+
+/* Scoped exception: Buttons innerhalb der Score-Anzeige sollen nicht die globale Full-Width-Rule übernehmen */
+#score-display .btn,
+#score-display button,
+.quiz-action-section #score-display .btn {
+  width: auto !important;
+  min-width: 64px;
+  display: inline-flex !important;
+  padding: 10px 20px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
+}
+
+/* Stelle sicher, dass die Score-Anzeige über temporären Debug-Panels liegt */
+#score-display {
+  position: relative;
+  z-index: 7005;
+}
+
+/* Sicherstellen, dass Flash-Overlay nicht dauerhaft Elemente verdeckt */
+#flash-overlay {
+  pointer-events: none;
+  z-index: 9999;
+}
