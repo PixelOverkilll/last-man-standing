@@ -642,6 +642,35 @@ body.bg-waves::before {
   box-shadow: 0 10px 30px rgba(124, 58, 237, 0.5);
 }
 
+.btn-correct {
+  background: #2ecc40;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-correct:hover {
+  background: #27ae38;
+}
+.btn-wrong {
+  background: #ff4136;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-wrong:hover {
+  background: #e12d1c;
+}
+
 .btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;

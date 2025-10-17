@@ -535,6 +535,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Punkte-Buttons in der Hauptleiste
+  const mainBtnCorrect = document.getElementById('main-btn-correct');
+  const mainBtnWrong = document.getElementById('main-btn-wrong');
+
+  if (mainBtnCorrect) {
+    mainBtnCorrect.addEventListener('click', function() {
+      score += 1;
+      if (scoreValue) scoreValue.textContent = score;
+      if (scoreValueSidebar) scoreValueSidebar.textContent = score;
+      if (scoreValueTest) scoreValueTest.textContent = score;
+    });
+  }
+  if (mainBtnWrong) {
+    mainBtnWrong.addEventListener('click', function() {
+      score -= 1;
+      if (score < 0) score = 0;
+      if (scoreValue) scoreValue.textContent = score;
+      if (scoreValueSidebar) scoreValueSidebar.textContent = score;
+      if (scoreValueTest) scoreValueTest.textContent = score;
+    });
+  }
+
   // Initial sync for the test display
   if (scoreValueTest) scoreValueTest.textContent = score;
 
