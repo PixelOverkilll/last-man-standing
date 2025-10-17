@@ -1000,23 +1000,23 @@ hr {
   margin-bottom: 14px;
 }
 .points-btn {
-  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
   color: #fff;
-  font-weight: 700;
-  border: 2px solid #a855f7;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 1.08em;
+  font-weight: 900;
+  border: 2.5px solid #5b21b6;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 1.18em;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(124,58,237,0.10);
+  box-shadow: 0 4px 16px rgba(60,0,80,0.18), 0 1px 8px #5b21b6;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-  letter-spacing: 0.5px;
-  text-shadow: 0 1px 4px rgba(60,0,80,0.18);
+  letter-spacing: 0.7px;
+  text-shadow: 0 2px 8px rgba(60,0,80,0.28);
 }
 .points-btn:hover {
   border-color: #8b27c4;
-  box-shadow: 0 0 0 4px #8b27c4, 0 2px 12px rgba(124,58,237,0.18);
-  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  box-shadow: 0 0 0 5px #8b27c4, 0 4px 20px rgba(60,0,80,0.28);
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
 }
 .points-cancel-btn {
   background: #f3f4f6;
