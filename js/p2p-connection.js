@@ -2,9 +2,6 @@
 // PEER-TO-PEER VERBINDUNG MIT PEERJS
 // ========================================
 
-const PING_INTERVAL_MS = 5000;
-const PING_TIMEOUT_MS = 15000;
-
 class P2PConnection {
   constructor() {
     this.peer = null;
@@ -21,6 +18,22 @@ class P2PConnection {
     // Heartbeat state (nur relevant für Host)
     this.lastPong = new Map(); // playerId -> timestamp of last pong
     this._pingInterval = null;
+
+    // Initialize instance heartbeat values with safe fallbacks
+    // We avoid hard-coding defaults in multiple places by using these instance props.
+    try {
+      if (typeof CONFIG !== 'undefined' && CONFIG.getPingInterval && CONFIG.getPingTimeout) {
+        // Use Number conversion to allow string-config values, with fallback
+        this.PING_INTERVAL_MS = Number(CONFIG.getPingInterval()) || 5000;
+        this.PING_TIMEOUT_MS = Number(CONFIG.getPingTimeout()) || 15000;
+      } else {
+        this.PING_INTERVAL_MS = 5000;
+        this.PING_TIMEOUT_MS = 15000;
+      }
+    } catch (e) {
+      this.PING_INTERVAL_MS = 5000;
+      this.PING_TIMEOUT_MS = 15000;
+    }
   }
 
   // Host erstellt eine Lobby
@@ -275,11 +288,26 @@ class P2PConnection {
   startHeartbeat() {
     if (!this.isHost) return;
     this.stopHeartbeat();
+
+    // Prefer dynamic CONFIG getters when available, otherwise fall back to the instance values
+    let interval = this.PING_INTERVAL_MS;
+    let timeout = this.PING_TIMEOUT_MS;
+    try {
+      if (typeof CONFIG !== 'undefined' && CONFIG.getPingInterval && CONFIG.getPingTimeout) {
+        const cfgInterval = Number(CONFIG.getPingInterval());
+        const cfgTimeout = Number(CONFIG.getPingTimeout());
+        if (!Number.isNaN(cfgInterval) && cfgInterval > 0) interval = cfgInterval;
+        if (!Number.isNaN(cfgTimeout) && cfgTimeout > 0) timeout = cfgTimeout;
+      }
+    } catch (e) {
+      // if reading CONFIG fails, keep existing instance values
+    }
+
     this._pingInterval = setInterval(() => {
       const now = Date.now();
       for (const [playerId, conn] of Array.from(this.connections.entries())) {
         const last = this.lastPong.get(playerId) || 0;
-        if (now - last > PING_TIMEOUT_MS) {
+        if (now - last > timeout) {
           console.warn('Keine Antwort von', playerId, 'seit', now - last, 'ms — entferne Verbindung');
           try { conn.close(); } catch (e) { /* ignore */ }
           this.connections.delete(playerId);
@@ -296,7 +324,7 @@ class P2PConnection {
           console.warn('Fehler beim Senden von Ping an', playerId, e);
         }
       }
-    }, PING_INTERVAL_MS);
+    }, interval);
   }
 
   stopHeartbeat() {
@@ -367,7 +395,11 @@ class P2PConnection {
 
     const conn = this.connections.get(playerId);
     if (conn && conn.open) {
-      conn.send(data);
+      try {
+        conn.send(data);
+      } catch (e) {
+        console.warn('Fehler beim Senden an Spieler', playerId, e);
+      }
     }
   }
 
@@ -376,7 +408,11 @@ class P2PConnection {
     if (this.isHost) return;
 
     if (this.hostConnection && this.hostConnection.open) {
-      this.hostConnection.send(data);
+      try {
+        this.hostConnection.send(data);
+      } catch (e) {
+        console.warn('Fehler beim Senden an Host', e);
+      }
     }
   }
 
@@ -411,71 +447,30 @@ class P2PConnection {
 
   // Alle Spieler abrufen
   getPlayers() {
-    if (this.isHost) {
-      return Array.from(this.connections.keys()).map(id => ({
-        id: id,
-        ...this.connections.get(id).metadata?.player
-      }));
-    } else {
-      return this.localPlayer ? [this.localPlayer] : [];
-    }
+    return Array.from(this.connections.keys());
   }
 
-  // Host: Starte das Spiel
-  startGame() {
-    if (!this.isHost) return;
-
-    this.broadcast({
-      type: 'game-start',
-      payload: { /* Spiel-Startdaten hier */ }
-    });
-  }
-
-  // Frage an alle Spieler senden
-  sendQuestionToAll(question) {
-    this.broadcast({
-      type: 'question',
-      question: question
-    });
-  }
-
-  // Antwort an den Host senden
-  sendAnswerToHost(answer) {
-    this.sendToHost({
-      type: 'answer',
-      answer: answer
-    });
-  }
-
-  // Ergebnisse an alle Spieler senden
-  sendResultsToAll(results) {
-    this.broadcast({
-      type: 'results',
-      results: results
-    });
-  }
-
-  // Alle Verbindungen trennen und Ressourcen freigeben
+  // Sauberes Trennen aller Verbindungen und Ressourcen
   disconnectAll() {
-    console.log('🔌 Trenne alle Verbindungen und räume auf...');
-    this.connections.forEach((conn) => {
-      try {
-        conn.close();
-      } catch (e) {
-        console.warn('Fehler beim Schließen einer Verbindung:', e);
-      }
-    });
-    this.connections.clear();
+    try {
+      // Stop heartbeat if running
+      this.stopHeartbeat();
 
-    if (this.peer) {
-      try {
-        this.peer.destroy();
-      } catch (e) {
-        console.warn('Fehler beim Zerstören des Peers:', e);
+      // Close all connections
+      for (const [id, conn] of Array.from(this.connections.entries())) {
+        try { conn.close(); } catch (e) { /* ignore */ }
       }
-      this.peer = null;
+      this.connections.clear();
+      this.lastPong.clear();
+
+      // Close peer
+      if (this.peer) {
+        try { this.peer.destroy(); } catch (e) { /* ignore */ }
+        this.peer = null;
+      }
+    } catch (e) {
+      console.warn('Fehler beim disconnectAll:', e);
     }
-
-    this.stopHeartbeat();
   }
+
 }
