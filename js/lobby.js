@@ -444,6 +444,9 @@ function generateLobbyCode() {
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('✅ DOM geladen');
 
+  // Entferne ggf. alte Inline-Stile von einer bereits existierenden Punkte-Sidebar
+  cleanupPointsSidebarInlineStyles();
+
   const urlParams = new URLSearchParams(window.location.search);
   const urlLobbyCode = urlParams.get('code');
 
@@ -513,6 +516,35 @@ document.addEventListener('DOMContentLoaded', async function() {
     setTimeout(() => window.location.href = 'index.html', 3000);
   }
 });
+
+// Entfernt Inline-Styles von bestehender Punkte-Sidebar/Buttons, falls sie durch ältere JS-Versionen gesetzt wurden
+function cleanupPointsSidebarInlineStyles() {
+  try {
+    const sidebar = document.getElementById('points-sidebar');
+    if (!sidebar) return;
+    // Entferne Inline-Styles, damit CSS wieder gilt
+    sidebar.style.background = '';
+    sidebar.style.border = '';
+    sidebar.style.boxShadow = '';
+    sidebar.style.display = '';
+
+    sidebar.querySelectorAll('.points-btn').forEach(btn => {
+      btn.style.background = '';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+      btn.style.boxShadow = '';
+    });
+
+    // Falls there is a cancel button too
+    const cancel = sidebar.querySelector('.points-cancel-btn');
+    if (cancel) {
+      cancel.style.background = '';
+      cancel.style.color = '';
+    }
+  } catch (e) {
+    console.warn('Fehler beim Aufräumen der Punkte-Sidebar Inline-Styles:', e);
+  }
+}
 
 // ========================================
 // DOM FUNKTIONEN
@@ -643,26 +675,32 @@ function showPointsSidebar(primaryColor) {
   if (primaryColor) {
     sidebar.style.border = `4px solid ${primaryColor}`;
     sidebar.style.boxShadow = `-8px 0 32px ${primaryColor}33`;
-    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    // Keine weiße Hintergrund-Erzwungung mehr, damit das CSS die Optik übernehmen kann
+    sidebar.style.background = 'rgba(30,15,45,0.95)';
     sidebar.style.transition = 'border 0.2s, box-shadow 0.2s, background 0.2s';
-    // Buttons: Umrandung beim Hover
+    // Buttons: nur Hover-Umrandung/Schatten per JS (keine statische weiße Hintergrundfarbe mehr)
     sidebar.querySelectorAll('.points-btn').forEach(btn => {
       btn.onmouseenter = () => {
         btn.style.borderColor = primaryColor;
-        btn.style.boxShadow = `0 0 0 2px ${primaryColor}`;
+        btn.style.boxShadow = `0 0 0 4px ${primaryColor}33, 0 6px 20px rgba(60,0,80,0.22)`;
+        btn.style.color = '#fff';
       };
       btn.onmouseleave = () => {
-        btn.style.borderColor = '#e5e7eb';
-        btn.style.boxShadow = 'none';
+        // Entferne die Inline-Styles, damit die CSS-Regeln wieder sichtbar werden
+        btn.style.borderColor = '';
+        btn.style.boxShadow = '';
+        btn.style.color = '';
       };
-      btn.style.borderColor = '#e5e7eb';
-      btn.style.background = '#fff';
-      btn.style.color = '#222';
+      // Entferne vorher gesetzte Inline-Styles, die Buttons weiß machten
+      btn.style.borderColor = '';
+      btn.style.background = '';
+      btn.style.color = '';
     });
   } else {
     sidebar.style.border = '4px solid #7c3aed';
     sidebar.style.boxShadow = '-8px 0 32px #7c3aed33';
-    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    // Keine weiße Hintergrund-Erzwungung hier
+    sidebar.style.background = '';
   }
   sidebar.style.display = 'block';
 }

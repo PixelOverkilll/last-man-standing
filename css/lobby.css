@@ -515,23 +515,29 @@ body.bg-waves {
 }
 
 .points-btn {
-  background: #fff;
-  color: #16b981;
+  /* Heller, weißer Stil entfernt (überschreibt globale style.css) */
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%);
+  color: #fff;
   font-size: 1.15rem;
   font-weight: 900;
-  border: 2px solid #16b981;
+  border: 2.5px solid #5b21b6;
   border-radius: 12px;
   padding: 12px 0;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(16,185,129,0.12);
-  transition: background 0.15s, color 0.15s, transform 0.12s;
+  box-shadow: 0 6px 20px rgba(60,0,80,0.22), 0 1px 8px #5b21b6;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s, background 0.15s;
   width: 100%;
+  text-align: center;
+  letter-spacing: 0.6px;
+  text-shadow: 0 2px 8px rgba(60,0,80,0.28);
 }
 
 .points-btn:hover {
-  background: #16b981;
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  border-color: #8b27c4;
   color: #fff;
-  transform: scale(1.08);
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 5px rgba(139,39,196,0.16), 0 8px 30px rgba(60,0,80,0.30);
 }
 
 .points-cancel-btn {
