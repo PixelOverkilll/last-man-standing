@@ -5,18 +5,7 @@ const DISCORD_OAUTH_URL = CONFIG.getDiscordOAuthUrl();
 // Quiz Start Page JavaScript with Discord Integration
 document.addEventListener('DOMContentLoaded', function() {
 
-  // Force-position fallback für bg-selector (falls CSS nicht sofort greift)
-  try {
-    const _bgSel = document.getElementById('bg-selector');
-    if (_bgSel) {
-      _bgSel.style.position = 'fixed';
-      _bgSel.style.top = '24px';
-      _bgSel.style.right = '24px';
-      _bgSel.style.zIndex = '99999';
-    }
-  } catch (e) {
-    console.warn('bg-selector fallback failed:', e);
-  }
+  // JS-Fallback zur Positionierung entfernt — CSS regelt jetzt die fixe Position des bg-selector
 
   // Elements
   const loginSection = document.getElementById('login-section');
