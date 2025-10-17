@@ -305,7 +305,7 @@ function setupConnection(conn, isToHost) {
 
 // Nachricht verarbeiten
 function handleMessage(data, conn) {
-  console.log('📨 Nachricht empfangen:', data.type);
+  console.log('\ud83d\udce8 Nachricht empfangen:', data.type);
 
   switch (data.type) {
     case 'lobby-state':
@@ -314,7 +314,7 @@ function handleMessage(data, conn) {
         const host = data.host;
         displayHostInfo(host);
 
-        // Füge alle Spieler hinzu
+        // F\u00fcge alle Spieler hinzu
         data.players.forEach(player => {
           if (!players.has(player.id)) {
             players.set(player.id, player);
@@ -328,7 +328,7 @@ function handleMessage(data, conn) {
       if (!players.has(data.player.id)) {
         players.set(data.player.id, data.player);
         addPlayerToDOM(data.player);
-        showNotification(`✅ ${data.player.name} ist beigetreten`, 'success', 2000);
+        showNotification(`\u2705 ${data.player.name} ist beigetreten`, 'success', 2000);
       }
       break;
 
@@ -337,13 +337,32 @@ function handleMessage(data, conn) {
         const player = players.get(data.playerId);
         removePlayerFromDOM(data.playerId);
         players.delete(data.playerId);
-        showNotification(`❌ ${player.name} hat die Lobby verlassen`, 'info', 2000);
+        showNotification(`\u274c ${player.name} hat die Lobby verlassen`, 'info', 2000);
+      }
+      break;
+
+    case 'score-update':
+      // Aktualisiere Punktestand, wenn ein Host diesen geaendert hat
+      if (data && data.playerId) {
+        const p = players.get(data.playerId) || null;
+        if (p) {
+          p.score = data.score;
+          players.set(data.playerId, p);
+          updatePlayerScoreInDOM(data.playerId, data.score);
+          showNotification(`\u2705 ${p.name} hat jetzt ${data.score} Punkte`, 'success', 1500);
+        } else {
+          // Falls Spieler noch nicht vorhanden, lege ihn kurz an (sicherheitsfall)
+          const newP = { id: data.playerId, name: data.name || 'Spieler', avatar: data.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.playerId, score: data.score };
+          players.set(data.playerId, newP);
+          addPlayerToDOM(newP);
+          showNotification(`\u2705 ${newP.name} hat jetzt ${data.score} Punkte`, 'success', 1500);
+        }
       }
       break;
 
     case 'game-start':
-      showNotification('🎮 Quiz startet!', 'success', 2000);
-      // Hier könnte das Quiz gestartet werden
+      showNotification('\ud83c\udfae Quiz startet!', 'success', 2000);
+      // Hier k\u00f6nnte das Quiz gestartet werden
       break;
   }
 }
@@ -493,9 +512,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 // DOM FUNKTIONEN
 // ========================================
 function addPlayerToDOM(player) {
-  // Prüfe ob Spieler bereits existiert
+  // Pr\u00fcfe ob Spieler bereits existiert
   if (document.getElementById('player-' + player.id)) {
-    console.log('⚠️ Spieler bereits in DOM:', player.name);
+    console.log('\u26a0\ufe0f Spieler bereits in DOM:', player.name);
     return;
   }
 
@@ -505,24 +524,102 @@ function addPlayerToDOM(player) {
   card.id = 'player-' + player.id;
   card.innerHTML = `
     <img src="${player.avatar}" alt="${player.name}" class="player-avatar">
-    <span class="player-name">${player.name}${player.isHost ? ' 👑' : ''}</span>
+    <span class="player-name">${player.name}${player.isHost ? ' \ud83d\udc51' : ''}</span>
     <span class="player-score">${player.score} Punkte</span>
   `;
+
+  // Falls Host: f\u00fcge einen Button hinzu, um Punkte manuell zu geben
+  if (isHost) {
+    const controls = document.createElement('div');
+    controls.className = 'player-controls';
+
+    const giveBtn = document.createElement('button');
+    giveBtn.className = 'give-points-btn';
+    giveBtn.textContent = 'Gib Punkte';
+    giveBtn.style.cssText = 'margin-left:8px;padding:6px 10px;border-radius:8px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-weight:600;';
+
+    giveBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleGivePoints(player.id);
+    });
+
+    controls.appendChild(giveBtn);
+    card.appendChild(controls);
+  }
+
   container.appendChild(card);
 
   extractDominantColor(player.avatar, (color) => {
     applyPlayerColor(card, color);
   });
 
-  console.log('➕ Spieler zur DOM hinzugefügt:', player.name);
+  console.log('\u2795 Spieler zur DOM hinzugef\u00fcgt:', player.name);
 }
 
 function removePlayerFromDOM(playerId) {
   const card = document.getElementById('player-' + playerId);
   if (card) {
     card.remove();
-    console.log('➖ Spieler aus DOM entfernt:', playerId);
+    console.log('\u2796 Spieler aus DOM entfernt:', playerId);
   }
+}
+
+// Aktualisiert die Anzeige des Punktestands im DOM
+function updatePlayerScoreInDOM(playerId, score) {
+  const card = document.getElementById('player-' + playerId);
+  if (!card) return;
+  const scoreElement = card.querySelector('.player-score');
+  if (scoreElement) {
+    scoreElement.textContent = `${score} Punkte`;
+    // kurzer visueller Effekt
+    scoreElement.style.transition = 'transform 0.15s ease, background-color 0.25s ease';
+    scoreElement.style.transform = 'scale(1.05)';
+    setTimeout(() => { scoreElement.style.transform = ''; }, 150);
+  }
+}
+
+// Host-Funktion: interaktives Prompt, um Punkte zu geben
+function handleGivePoints(playerId) {
+  const player = players.get(playerId);
+  if (!player) {
+    showNotification('\u26a0\ufe0f Spieler nicht gefunden', 'error', 1500);
+    return;
+  }
+
+  const input = prompt(`Punkte f\u00fcr ${player.name} hinzuf\u00fcgen (z.B. 1 oder -1 für abziehen):`, '1');
+  if (input === null) return; // abgebrochen
+
+  const value = parseInt(input, 10);
+  if (isNaN(value)) {
+    showNotification('\u274c Ung\u00fcltige Zahl', 'error', 1500);
+    return;
+  }
+
+  awardPoints(playerId, value);
+}
+
+// Host-Funktion: Punkte vergeben und an Clients broadcasten
+function awardPoints(playerId, delta) {
+  if (!isHost) return;
+  const player = players.get(playerId);
+  if (!player) return;
+
+  player.score = (player.score || 0) + Number(delta);
+  players.set(playerId, player);
+
+  // Update DOM lokal
+  updatePlayerScoreInDOM(playerId, player.score);
+
+  // Broadcast an alle Clients
+  broadcast({
+    type: 'score-update',
+    playerId: playerId,
+    score: player.score,
+    name: player.name,
+    avatar: player.avatar
+  });
+
+  showNotification(`\u2705 ${player.name} erh\u00e4lt ${delta > 0 ? '+' + delta : delta} Punkte (insg. ${player.score})`, 'success', 1800);
 }
 
 // ========================================

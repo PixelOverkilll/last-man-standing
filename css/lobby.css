@@ -445,6 +445,45 @@ body.bg-waves {
   transform: scale(1.05);
 }
 
+/* Zusätzliche Styles für Spieler-Controls (z.B. 'Gib Punkte' Button) */
+.player-controls {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.give-points-btn {
+  background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+  color: #fff;
+  border: 2px solid rgba(124,58,237,0.9);
+  padding: 6px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.9rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+  box-shadow: 0 6px 18px rgba(124,58,237,0.25);
+}
+
+.give-points-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(124,58,237,0.35);
+}
+
+.give-points-btn:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+/* Responsive: kleinere Buttons auf engen Bildschirmen */
+@media (max-width: 480px) {
+  .give-points-btn {
+    padding: 5px 8px;
+    font-size: 0.75rem;
+    border-radius: 8px;
+  }
+}
+
 /* Responsive Anpassungen */
 @media (max-width: 768px) {
   .host-info {
