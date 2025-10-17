@@ -131,3 +131,68 @@ Kontakt/Meta
 - Autor: Generiert als Übergabeinstruktion für die nächste KI
 
 ENDE
+
+Fix: Punktevergabe - weiße Buttons behoben (17.10.2025)
+-------------------------------------------------------
+Kurzbeschreibung
+- Problem: Die Punktevergabe-Buttons wurden auf weiß dargestellt und waren kaum lesbar, obwohl ein dunkles lila Design gewünscht war.
+- Ursache: Kombination aus einer überschreibenden CSS-Regel in `css/lobby.css` (weißes Styling) und Inline-Stilzuweisungen in `js/lobby.js`, die den Button-Hintergrund auf `#fff` gesetzt haben. Inline-Stile haben höhere Priorität als CSS-Dateien und führten zu dem hellen, verwaschenen Aussehen.
+
+Was geändert wurde
+- `css/lobby.css`: Entferntes helles/weißes `.points-btn`-Styling; ersetzt durch dunkles lila Verlauf-Design mit verbessertem Kontrast, Schatten und Hover.
+- `css/style.css`: Globale `.points-sidebar` auf dunkles, semi-transparente Oberfläche gesetzt; spezifische Regeln `.points-sidebar .points-btn` hinzugefügt sowie ein `!important`-Fallback für hartnäckige Überschreibungen.
+- `js/lobby.js`: Inline-Stilzuweisungen entfernt; Hover-Styles nur noch temporär (mouseenter/mouseleave); `cleanupPointsSidebarInlineStyles()` ergänzt und beim `DOMContentLoaded` aufgerufen, um alte Inline-Styles zu bereinigen.
+
+Test- und Prüf-Anleitung
+1) Pull & Log:
+   ```cmd
+   cd "C:\Users\Crave\IdeaProjects\Last man standing"
+   git pull
+   git log --oneline -n 5
+   ```
+2) Seite neu laden (Cache löschen): STRG+F5 oder STRG+Shift+R, oder Inkognito-Fenster verwenden.
+3) Visuell prüfen: Punkte-Sidebar öffnen — Buttons sollten dunkellila mit weißer, fetter Schrift und gutem Schatten sein; Hover zeigt intensivere lila Umrandung.
+4) DevTools-Check: Bei einem `.points-btn` im Inspector im Tab "Computed" nachsehen, welche Regel den `background` liefert; kein `rgb(255,255,255)` als Quelle sollte erscheinen.
+5) Falls nötig: Inline-Cleanup in Console ausführen:
+   ```javascript
+   if (typeof cleanupPointsSidebarInlineStyles === 'function') cleanupPointsSidebarInlineStyles();
+   ```
+
+Git / Commit-Historie
+- Relevante Commits (Beispiele):
+  - "fix(ui): Punkte-Sidebar dunkel, entferne weiße Inline-Styles"
+  - "fix: Punktevergabe-Buttons dunkler und besser lesbar"
+- Änderungen sind auf `origin/main` gepusht.
+
+Weiteres / Empfohlene Optionen
+- Wenn du möchtest, kann ich eine zusätzliche Variante mit noch dunkleren Farben (z. B. `#3a0c7a`) oder eine UI-Toggle-Option (hell/dunkel) implementieren.
+
+
+=== NEUE ÄNDERUNGEN (17.10.2025) ===
+
+Hinzugefügt: Host-Screen-Flash für Richtig/Falsch
+-------------------------------------------------
+Kurzbeschreibung
+- Der Host hat jetzt zwei zusätzliche Knöpfe in der Lobby: "Richtig" (grün) und "Falsch" (rot).
+- Beim Drücken eines Knopfes leuchtet der gesamte Bildschirm kurz in der jeweiligen Farbe auf (sichtbar für Host und alle Clients in der Lobby).
+- Technisch: Der Host sendet ein P2P-Broadcast mit dem Typ `screen-flash` an alle verbundenen Clients; Clients empfangen dieses Ereignis und spielen die gleiche Flash-Animation lokal ab.
+
+Betroffene Dateien
+- `lobby.html` — zwei neue Buttons in `.host-controls` (`btn-correct`, `btn-incorrect`).
+- `css/lobby.css` — neue Styles für `.screen-flash` Overlay und Button-Stile für die Host-Knöpfe.
+- `js/lobby.js` — neue Funktionen `triggerScreenFlash(color, duration)` und Empfangs-Handler für `screen-flash` Nachrichten. Die Host-Buttons senden außerdem ein Broadcast, damit alle Clients synchron flashen.
+
+Design / Verhalten
+- Dauer: Standardmäßig ca. 700ms (mit sanftem Ein-/Ausblenden).
+- Farben: Richtig = `rgba(34,197,94,0.92)` (grün), Falsch = `rgba(239,68,68,0.92)` (rot).
+- Accessibility: Overlay verwendet `pointer-events: none` so dass Interaktionen nicht blockiert werden; Host-Buttons sind normal erreichbar.
+
+Safety / Hinweise
+- Broadcast-Nachrichten sind nur kleine Steuerbefehle (kein Transfer von sensiblen Daten).
+- Wenn die P2P-Verbindung instabil ist, funktioniert der Host-Lokal-Flash immer noch (Host sieht sein eigenes Feedback); Clients bekommen ggf. kein Signal.
+
+Test- und Prüf-Anleitung
+1) Erstelle Lobby als Host (wie zuvor). Die Host-Knöpfe erscheinen in `.host-controls`.
+2) Host klickt "Richtig" oder "Falsch": Bildschirm sollte kurz grün bzw. rot aufblitzen.
+3) Clients in der Lobby sollten das gleiche Flash sehen, wenn sie verbunden sind.
+4) Console/Network: In DevTools siehst du in der Console das gesendete Broadcast-Event (`screen-flash`).

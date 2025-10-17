@@ -1013,3 +1013,14 @@ hr {
   background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
   transform: translateY(-2px);
 }
+
+/* Fallback-Override: Erzwinge dunkles Button-Design innerhalb der Sidebar (letzte Absicherung) */
+.points-sidebar .points-btn,
+.points-sidebar .points-btn * {
+  background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 100%) !important;
+  color: #ffffff !important;
+  border-color: #5b21b6 !important;
+  box-shadow: 0 6px 20px rgba(60,0,80,0.22) !important;
+  text-shadow: 0 2px 8px rgba(60,0,80,0.28) !important;
+}
+

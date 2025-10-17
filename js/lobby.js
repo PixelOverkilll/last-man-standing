@@ -320,7 +320,7 @@ function handleMessage(data, conn) {
         const host = data.host;
         displayHostInfo(host);
 
-        // F\u00fcge alle Spieler hinzu
+        // Füge alle Spieler hinzu
         data.players.forEach(player => {
           if (!players.has(player.id)) {
             players.set(player.id, player);
@@ -368,7 +368,19 @@ function handleMessage(data, conn) {
 
     case 'game-start':
       showNotification('\ud83c\udfae Quiz startet!', 'success', 2000);
-      // Hier k\u00f6nnte das Quiz gestartet werden
+      // Hier könnte das Quiz gestartet werden
+      break;
+
+    case 'screen-flash':
+      // Neue Nachricht: Bildschirm-Flash synchronisieren
+      if (data && data.color) {
+        try {
+          const duration = Number(data.duration) || 700;
+          triggerScreenFlash(data.color, duration);
+        } catch (e) {
+          console.warn('Fehler beim Ausführen des screen-flash Events:', e);
+        }
+      }
       break;
   }
 }
@@ -806,6 +818,34 @@ function setupEventListeners() {
 
   const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
   if (leaveLobbyBtn) leaveLobbyBtn.addEventListener('click', leaveLobby);
+
+  // Neue Host-Bewertungs-Buttons (Richtig / Falsch)
+  const btnCorrect = document.getElementById('btn-correct');
+  const btnIncorrect = document.getElementById('btn-incorrect');
+
+  if (btnCorrect) {
+    btnCorrect.addEventListener('click', () => {
+      if (!isHost) return;
+      const color = 'rgba(34,197,94,0.92)'; // grün
+      const duration = 700;
+      // Lokaler Flash für Host
+      triggerScreenFlash(color, duration);
+      // Broadcast an alle Clients
+      broadcast({ type: 'screen-flash', color, duration });
+      console.log('📣 Host sendet screen-flash (correct)');
+    });
+  }
+
+  if (btnIncorrect) {
+    btnIncorrect.addEventListener('click', () => {
+      if (!isHost) return;
+      const color = 'rgba(239,68,68,0.92)'; // rot
+      const duration = 700;
+      triggerScreenFlash(color, duration);
+      broadcast({ type: 'screen-flash', color, duration });
+      console.log('📣 Host sendet screen-flash (incorrect)');
+    });
+  }
 }
 
 function leaveLobby() {
@@ -922,6 +962,43 @@ function applySavedBackground() {
     }
   } catch (e) {
     console.error('❌ Fehler beim Anwenden des Hintergrunds:', e);
+  }
+}
+
+// Screen Flash Helper: erstellt/holt Overlay und spielt kurzen Farb-Flash ab
+function getOrCreateScreenOverlay() {
+  let overlay = document.getElementById('screen-flash-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'screen-flash-overlay';
+    overlay.className = 'screen-flash';
+    // Default hidden
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+function triggerScreenFlash(color = 'rgba(124,58,237,0.9)', duration = 700) {
+  try {
+    const overlay = getOrCreateScreenOverlay();
+    // Setze die Hintergrundfarbe (inkl. Alpha)
+    overlay.style.background = color;
+
+    // Force a reflow to ensure transition runs even if color is the same
+    void overlay.offsetWidth;
+
+    overlay.classList.add('show');
+
+    // Entferne nach duration + fadeOut (transition 250ms)
+    const total = Number(duration) || 700;
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      // leave overlay in DOM for reuse
+    }, total);
+  } catch (e) {
+    console.error('Fehler beim triggerScreenFlash:', e);
   }
 }
 
