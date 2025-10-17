@@ -531,6 +531,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
+  // Defensive: ensure host-controls exist before binding listeners
+  ensureHostControlsExist();
+
   // Initialisiere UI
   initUI();
   setupEventListeners();
@@ -827,10 +830,56 @@ function initUI() {
 
   if (isHost) {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
-    if (hostControls) hostControls.style.display = 'block';
+    if (hostControls) {
+      hostControls.style.display = 'block';
+      // DEBUG: make host controls visually obvious for testing
+      hostControls.style.border = '3px dashed #ffde59';
+      hostControls.style.background = 'rgba(0,0,0,0.6)';
+      hostControls.style.padding = '12px';
+      hostControls.style.borderRadius = '12px';
+      hostControls.style.zIndex = '6002';
+      console.log('🛠️ DEBUG: Host-Controls sichtbar gemacht (debug styles applied)');
+
+      // Also ensure inner eval-buttons are visible
+      const evalButtons = hostControls.querySelector('.host-eval-buttons');
+      if (evalButtons) {
+        evalButtons.style.display = 'inline-flex';
+        evalButtons.style.gap = '12px';
+      }
+    }
   } else {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'none';
     if (hostControls) hostControls.style.display = 'none';
+  }
+}
+
+// Ensure host controls exist in the DOM; if not, create them (defensive fallback)
+function ensureHostControlsExist() {
+  let hostControls = document.getElementById('host-controls');
+  if (!hostControls) {
+    console.log('🛠️ Fallback: host-controls nicht gefunden, erstelle sie programmgesteuert');
+    const questionArea = document.querySelector('.question-area') || document.body;
+    hostControls = document.createElement('div');
+    hostControls.id = 'host-controls';
+    hostControls.className = 'host-controls';
+    hostControls.style.display = 'block';
+    // temporary debug styles to ensure visibility
+    hostControls.style.border = '3px dashed #ffde59';
+    hostControls.style.background = 'rgba(0,0,0,0.6)';
+    hostControls.style.padding = '12px';
+    hostControls.style.borderRadius = '12px';
+    hostControls.style.zIndex = '6002';
+
+    hostControls.innerHTML = `
+      <button class="btn btn-start" id="start-quiz-btn"><span class="btn-icon">▶️</span> Quiz starten</button>
+      <div class="host-eval-buttons">
+        <button class="btn btn-correct" id="btn-correct" title="Richtig">✅ Richtig</button>
+        <button class="btn btn-incorrect" id="btn-incorrect" title="Falsch">❌ Falsch</button>
+      </div>
+    `;
+
+    // Append to question-area (or end of body)
+    questionArea.appendChild(hostControls);
   }
 }
 
