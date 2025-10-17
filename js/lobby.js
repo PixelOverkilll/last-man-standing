@@ -13,6 +13,8 @@ let peer = null;
 let connections = new Map(); // playerId -> connection
 let hostConnection = null;
 let selectedPlayerId = null;
+// Verwende zentrale P2PConnection-Klasse
+let p2p = null;
 
 // ========================================
 // FARBEXTRAKTION FÜR AVATARE
@@ -165,7 +167,13 @@ function cleanupConnections() {
       hostConnection = null;
     }
 
-    // Zerstöre Peer-Objekt
+    // Wenn eine zentrale P2P-Instanz existiert, nutze deren Cleanup
+    if (p2p) {
+      try { p2p.disconnectAll(); } catch (e) { console.warn('Fehler beim p2p.disconnectAll', e); }
+      p2p = null;
+    }
+
+    // Zerstöre lokale Peer-Referenz (falls noch vorhanden)
     if (peer) {
       try { peer.destroy(); } catch (e) { /* ignore */ }
       peer = null;
@@ -186,152 +194,111 @@ function cleanupConnections() {
 async function createLobby(code) {
   console.log('🎮 Erstelle P2P-Lobby als Host mit Code:', code);
 
-  return new Promise((resolve, reject) => {
-    // Falls bereits eine Peer-Instanz existiert (z.B. durch Reload), räumen wir vorher auf
-    cleanupConnections();
+  // Erzeuge P2PConnection und konfiguriere Event-Handler
+  p2p = new P2PConnection();
 
-    // Erstelle Peer mit dem übergebenen Lobby-Code als ID
-    peer = new Peer(code, {
-      debug: 1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      }
-    });
+  // Wenn ein Spieler beitritt, synchronisiere lokale Maps und UI
+  p2p.onPlayerJoined = (player) => {
+    // Map mit Connection-Objekt aus P2PConnection füllen
+    const conn = p2p.connections.get(player.id);
+    if (conn) connections.set(player.id, conn);
+    players.set(player.id, player);
+    addPlayerToDOM(player);
+    showNotification(`✅ ${player.name} ist beigetreten`, 'success', 2000);
+  };
 
-    peer.on('open', (id) => {
-      console.log('✅ P2P-Lobby erstellt mit Code:', id);
-      lobbyCode = id;
+  p2p.onPlayerLeft = (playerId) => {
+    if (players.has(playerId)) {
+      const player = players.get(playerId);
+      removePlayerFromDOM(playerId);
+      players.delete(playerId);
+      connections.delete(playerId);
+      showNotification(`❌ ${player.name} hat die Lobby verlassen`, 'info', 2000);
+    }
+  };
 
-      // Host wird NICHT als Spieler hinzugefügt, nur als Host-Info gespeichert
-      console.log('👑 Host bereit, warte auf Spieler...');
+  p2p.onGameStateUpdate = (data) => {
+    // Bei Host normalerweise nicht benötigt, aber forwarden
+    handleMessage(data);
+  };
 
-      resolve(id);
-    });
+  p2p.onMessageReceived = (type, data) => {
+    // Leite generische Nachrichten an vorhandene Handler weiter
+    handleMessage({ type, ...data });
+  };
 
-    peer.on('error', (error) => {
-      console.error('❌ Peer Error:', error);
-      showNotification('❌ Verbindungsfehler: ' + error.type, 'error', 3000);
-      reject(error);
-    });
+  // Erstelle Host-Player-Objekt
+  const hostPlayer = {
+    id: currentUser?.id || 'host_' + Date.now(),
+    name: currentUser?.global_name || currentUser?.username || 'Host',
+    avatar: getUserAvatar(currentUser),
+    isHost: true
+  };
 
-    // Lausche auf eingehende Verbindungen
-    peer.on('connection', (conn) => {
-      console.log('👥 Eingehende Verbindung von:', conn.peer);
-      handleIncomingConnection(conn);
-    });
-  });
+  try {
+    const id = await p2p.createLobby(hostPlayer);
+    lobbyCode = id;
+    localStorage.setItem('lobbyCode', lobbyCode);
+    // Starte Heartbeat für Host
+    p2p.startHeartbeat();
+    return id;
+  } catch (e) {
+    throw e;
+  }
 }
 
 // Spieler tritt Lobby bei
 async function joinLobby(code) {
   console.log('🔗 Verbinde mit Lobby:', code);
 
-  return new Promise((resolve, reject) => {
-    // Aufräumen falls alte Instanz noch existiert
-    cleanupConnections();
+  p2p = new P2PConnection();
 
-    // Erstelle Peer mit zufälliger ID
-    peer = new Peer({
-      debug: 2,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      }
-    });
+  // Client event handlers
+  p2p.onGameStateUpdate = (data) => {
+    // Erhalte lobby-state vom Host
+    handleMessage({ type: 'lobby-state', ...data });
+  };
 
-    peer.on('open', (id) => {
-      console.log('🔗 Peer erstellt mit ID:', id);
+  p2p.onPlayerJoined = (player) => {
+    if (!players.has(player.id)) {
+      players.set(player.id, player);
+      // Sync connection if available
+      const conn = p2p.connections.get(player.id);
+      if (conn) connections.set(player.id, conn);
+      addPlayerToDOM(player);
+    }
+  };
 
-      // Verbinde mit Host
-      const conn = peer.connect(code, {
-        reliable: true,
-        metadata: {
-          player: {
-            id: id,
-            name: currentUser.global_name || currentUser.username,
-            avatar: getUserAvatar(currentUser),
-            score: 0,
-            isHost: false
-          }
-        }
-      });
+  p2p.onPlayerLeft = (playerId) => {
+    if (players.has(playerId)) {
+      removePlayerFromDOM(playerId);
+      players.delete(playerId);
+      connections.delete(playerId);
+    }
+  };
 
-      setupConnection(conn, true);
-      hostConnection = conn;
+  p2p.onMessageReceived = (type, data) => {
+    handleMessage({ type, ...data });
+  };
 
-      conn.on('open', () => {
-        console.log('✅ Verbindung zum Host hergestellt');
-        showNotification('✅ Mit Lobby verbunden!', 'success', 2000);
-        resolve(conn);
-      });
+  const playerObj = {
+    id: currentUser?.id || ('p_' + Date.now()),
+    name: currentUser?.global_name || currentUser?.username,
+    avatar: getUserAvatar(currentUser),
+    score: 0,
+    isHost: false
+  };
 
-      conn.on('error', (error) => {
-        console.error('❌ Verbindungsfehler:', error);
-        showNotification('❌ Verbindung fehlgeschlagen', 'error', 3000);
-        reject(error);
-      });
-    });
-
-    peer.on('error', (error) => {
-      console.error('❌ Peer Error:', error);
-      showNotification('❌ Lobby nicht gefunden', 'error', 3000);
-      reject(error);
-    });
-  });
+  try {
+    const conn = await p2p.joinLobby(code, playerObj);
+    hostConnection = conn;
+    return conn;
+  } catch (e) {
+    throw e;
+  }
 }
 
-// Host: Eingehende Verbindung behandeln
-function handleIncomingConnection(conn) {
-  console.log('👤 Neuer Spieler verbindet sich:', conn.peer);
-
-  setupConnection(conn, false);
-
-  conn.on('open', () => {
-    console.log('✅ Verbindung geöffnet mit:', conn.peer);
-
-    const player = conn.metadata?.player || {
-      id: conn.peer,
-      name: 'Spieler_' + conn.peer.substring(0, 4),
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + conn.peer,
-      score: 0,
-      isHost: false
-    };
-
-    console.log('➕ Füge Spieler hinzu:', player);
-
-    connections.set(player.id, conn);
-    players.set(player.id, player);
-
-    // Spieler zur DOM hinzufügen
-    addPlayerToDOM(player);
-
-    // Sende aktuelle Lobby-Daten an neuen Spieler
-    setTimeout(() => {
-      console.log('📤 Sende Lobby-State an:', player.name);
-      conn.send({
-        type: 'lobby-state',
-        host: {
-          name: currentUser.global_name || currentUser.username,
-          avatar: getUserAvatar(currentUser)
-        },
-        players: Array.from(players.values())
-      });
-    }, 500);
-
-    // Benachrichtige alle anderen über den neuen Spieler
-    broadcast({
-      type: 'player-joined',
-      player: player
-    }, player.id);
-
-    showNotification(`✅ ${player.name} ist beigetreten`, 'success', 2000);
-  });
-}
+// Host: wird jetzt von P2PConnection intern behandelt; UI-Updates kommen über p2p.onPlayerJoined
 
 // Verbindungs-Events einrichten
 function setupConnection(conn, isToHost) {
@@ -836,6 +803,13 @@ function leaveLobby() {
 
   showNotification('Lobby verlassen', 'info', 500);
   setTimeout(() => window.location.href = 'index.html', 500);
+}
+
+// Wenn Host-Lobby aktiv, starte Heartbeat
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    cleanupConnections();
+  });
 }
 
 function startQuiz() {

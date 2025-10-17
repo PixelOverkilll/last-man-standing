@@ -2,6 +2,9 @@
 // PEER-TO-PEER VERBINDUNG MIT PEERJS
 // ========================================
 
+const PING_INTERVAL_MS = 5000;
+const PING_TIMEOUT_MS = 15000;
+
 class P2PConnection {
   constructor() {
     this.peer = null;
@@ -14,6 +17,10 @@ class P2PConnection {
     this.onGameStateUpdate = null;
     this.onMessageReceived = null;
     this.localPlayer = null;
+
+    // Heartbeat state (nur relevant für Host)
+    this.lastPong = new Map(); // playerId -> timestamp of last pong
+    this._pingInterval = null;
   }
 
   // Host erstellt eine Lobby
@@ -30,6 +37,25 @@ class P2PConnection {
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' }
           ]
+        }
+      });
+
+      // Peer-Status-Handler: sauberes Aufräumen bei Verbindungsverlust
+      this.peer.on('disconnected', () => {
+        console.warn('Peer disconnected - versuche Cleanup');
+        try {
+          this.disconnectAll();
+        } catch (e) {
+          console.warn('Fehler beim disconnectAll nach disconnected:', e);
+        }
+      });
+
+      this.peer.on('close', () => {
+        console.warn('Peer closed - zerstöre lokale Ressourcen');
+        try {
+          this.disconnectAll();
+        } catch (e) {
+          console.warn('Fehler beim disconnectAll nach close:', e);
         }
       });
 
@@ -70,6 +96,17 @@ class P2PConnection {
         }
       });
 
+      // Peer-Status-Handler für Clients
+      this.peer.on('disconnected', () => {
+        console.warn('Client-Peer disconnected - versuche Cleanup');
+        try { this.disconnectAll(); } catch (e) { console.warn(e); }
+      });
+
+      this.peer.on('close', () => {
+        console.warn('Client-Peer closed - versuche Cleanup');
+        try { this.disconnectAll(); } catch (e) { console.warn(e); }
+      });
+
       this.peer.on('open', (id) => {
         console.log('🔗 Verbinde mit Lobby:', lobbyCode);
 
@@ -94,6 +131,8 @@ class P2PConnection {
 
         conn.on('error', (error) => {
           console.error('❌ Verbindungsfehler:', error);
+          // Versuche Verbindung zu schließen, damit close-Handler greift
+          try { conn.close(); } catch (e) { /* ignore */ }
           reject(error);
         });
       });
@@ -154,6 +193,7 @@ class P2PConnection {
 
     conn.on('error', (error) => {
       console.error('❌ Connection Error:', error);
+      try { conn.close(); } catch (e) { /* ignore */ }
     });
   }
 
@@ -162,11 +202,32 @@ class P2PConnection {
     console.log('📨 Nachricht empfangen:', data);
 
     switch (data.type) {
+      case 'ping':
+        // Client empfängt Ping vom Host -> antworte mit Pong
+        if (!this.isHost) {
+          try { this.sendToHost({ type: 'pong', timestamp: Date.now() }); } catch (e) { /* ignore */ }
+        }
+        return;
+
+      case 'pong':
+        // Host empfängt Pong -> aktualisiere lastPong
+        if (this.isHost) {
+          for (const [id, c] of this.connections.entries()) {
+            if (c === conn) {
+              this.lastPong.set(id, Date.now());
+              break;
+            }
+          }
+        }
+        return;
+
       case 'player-join':
         if (this.isHost) {
           const player = data.player;
           this.connections.set(player.id, conn);
           conn.metadata = { player: player };
+          // initial last seen
+          this.lastPong.set(player.id, Date.now());
         }
         break;
 
@@ -210,6 +271,41 @@ class P2PConnection {
     }
   }
 
+  // Starte Heartbeat (nur für Host)
+  startHeartbeat() {
+    if (!this.isHost) return;
+    this.stopHeartbeat();
+    this._pingInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [playerId, conn] of Array.from(this.connections.entries())) {
+        const last = this.lastPong.get(playerId) || 0;
+        if (now - last > PING_TIMEOUT_MS) {
+          console.warn('Keine Antwort von', playerId, 'seit', now - last, 'ms — entferne Verbindung');
+          try { conn.close(); } catch (e) { /* ignore */ }
+          this.connections.delete(playerId);
+          this.lastPong.delete(playerId);
+          // broadcast player-left
+          this.broadcast({ type: 'player-left', playerId: playerId });
+          if (this.onPlayerLeft) this.onPlayerLeft(playerId);
+          continue;
+        }
+
+        try {
+          if (conn && conn.open) conn.send({ type: 'ping', timestamp: now });
+        } catch (e) {
+          console.warn('Fehler beim Senden von Ping an', playerId, e);
+        }
+      }
+    }, PING_INTERVAL_MS);
+  }
+
+  stopHeartbeat() {
+    if (this._pingInterval) {
+      clearInterval(this._pingInterval);
+      this._pingInterval = null;
+    }
+  }
+
   // Verbindung getrennt
   handleDisconnect(conn) {
     // Versuche zuerst, die Player-ID aus den Metadaten zu nutzen
@@ -234,14 +330,18 @@ class P2PConnection {
       // Entferne den Spieler-Eintrag aus der Map (falls vorhanden)
       if (playerId && this.connections.has(playerId)) {
         this.connections.delete(playerId);
+        this.lastPong.delete(playerId);
       } else {
         // Notfall: entferne alle Einträge, die auf dasselbe Connection-Objekt zeigen
         for (const [id, c] of Array.from(this.connections.entries())) {
           if (c === conn) {
             this.connections.delete(id);
+            this.lastPong.delete(id);
           }
         }
       }
+
+      console.log('ℹ️ Host connections nach Disconnect:', this.connections.size);
 
       // Benachrichtige andere Spieler (wenn wir eine ID ermitteln konnten, sende sie)
       this.broadcast({
@@ -311,4 +411,71 @@ class P2PConnection {
 
   // Alle Spieler abrufen
   getPlayers() {
-    if
+    if (this.isHost) {
+      return Array.from(this.connections.keys()).map(id => ({
+        id: id,
+        ...this.connections.get(id).metadata?.player
+      }));
+    } else {
+      return this.localPlayer ? [this.localPlayer] : [];
+    }
+  }
+
+  // Host: Starte das Spiel
+  startGame() {
+    if (!this.isHost) return;
+
+    this.broadcast({
+      type: 'game-start',
+      payload: { /* Spiel-Startdaten hier */ }
+    });
+  }
+
+  // Frage an alle Spieler senden
+  sendQuestionToAll(question) {
+    this.broadcast({
+      type: 'question',
+      question: question
+    });
+  }
+
+  // Antwort an den Host senden
+  sendAnswerToHost(answer) {
+    this.sendToHost({
+      type: 'answer',
+      answer: answer
+    });
+  }
+
+  // Ergebnisse an alle Spieler senden
+  sendResultsToAll(results) {
+    this.broadcast({
+      type: 'results',
+      results: results
+    });
+  }
+
+  // Alle Verbindungen trennen und Ressourcen freigeben
+  disconnectAll() {
+    console.log('🔌 Trenne alle Verbindungen und räume auf...');
+    this.connections.forEach((conn) => {
+      try {
+        conn.close();
+      } catch (e) {
+        console.warn('Fehler beim Schließen einer Verbindung:', e);
+      }
+    });
+    this.connections.clear();
+
+    if (this.peer) {
+      try {
+        this.peer.destroy();
+      } catch (e) {
+        console.warn('Fehler beim Zerstören des Peers:', e);
+      }
+      this.peer = null;
+    }
+
+    this.stopHeartbeat();
+  }
+}
