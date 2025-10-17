@@ -12,6 +12,7 @@ let players = new Map(); // playerId -> playerData
 let peer = null;
 let connections = new Map(); // playerId -> connection
 let hostConnection = null;
+let selectedPlayerId = null;
 
 // ========================================
 // FARBEXTRAKTION FÜR AVATARE
@@ -122,6 +123,10 @@ function hslToRgb(h, s, l) {
 function applyPlayerColor(playerCard, color) {
   const rgb = color.match(/\d+/g).map(Number);
 
+  // Setze CSS-Variablen für Avatar-Farbe
+  playerCard.style.setProperty('--avatar-color', color);
+  playerCard.style.setProperty('--avatar-rgb', `${rgb[0]},${rgb[1]},${rgb[2]}`);
+
   playerCard.style.borderColor = color;
   playerCard.style.boxShadow = `0 15px 40px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
 
@@ -131,11 +136,12 @@ function applyPlayerColor(playerCard, color) {
     avatar.style.boxShadow = `0 0 25px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9)`;
   }
 
-  const scoreElement = playerCard.querySelector('.player-score');
-  if (scoreElement) {
-    scoreElement.style.borderColor = color;
-    scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
-  }
+  // Punkte-Leiste nutzt jetzt CSS-Variable, keine direkte Style-Zuweisung mehr
+  // const scoreElement = playerCard.querySelector('.player-score');
+  // if (scoreElement) {
+  //   scoreElement.style.borderColor = color;
+  //   scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+  // }
 }
 
 // ========================================
@@ -528,29 +534,16 @@ function addPlayerToDOM(player) {
     <span class="player-score">${player.score} Punkte</span>
   `;
 
-  // Falls Host: f\u00fcge einen Button hinzu, um Punkte manuell zu geben
-  if (isHost) {
-    const controls = document.createElement('div');
-    controls.className = 'player-controls';
-
-    const giveBtn = document.createElement('button');
-    giveBtn.className = 'give-points-btn';
-    giveBtn.textContent = 'Gib Punkte';
-    giveBtn.style.cssText = 'margin-left:8px;padding:6px 10px;border-radius:8px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-weight:600;';
-
-    giveBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleGivePoints(player.id);
-    });
-
-    controls.appendChild(giveBtn);
-    card.appendChild(controls);
-  }
-
   container.appendChild(card);
 
   extractDominantColor(player.avatar, (color) => {
     applyPlayerColor(card, color);
+  });
+
+  // Host kann Spieler auswählen (Klick auf Karte)
+  card.addEventListener('click', () => {
+    if (!isHost) return;
+    selectPlayerForPoints(player.id);
   });
 
   console.log('\u2795 Spieler zur DOM hinzugef\u00fcgt:', player.name);
@@ -598,6 +591,92 @@ function handleGivePoints(playerId) {
   awardPoints(playerId, value);
 }
 
+function selectPlayerForPoints(playerId) {
+  // Entferne alte Markierung
+  document.querySelectorAll('.player-card.selected-player').forEach(card => {
+    card.classList.remove('selected-player');
+  });
+  selectedPlayerId = playerId;
+  const card = document.getElementById('player-' + playerId);
+  if (card) {
+    card.classList.add('selected-player');
+  }
+  // Avatar-Farbe berechnen und an Sidebar übergeben
+  const player = players.get(playerId);
+  if (player) {
+    extractDominantColor(player.avatar, (color) => {
+      showPointsSidebar(color);
+    });
+  } else {
+    showPointsSidebar();
+  }
+}
+
+function showPointsSidebar(primaryColor) {
+  let sidebar = document.getElementById('points-sidebar');
+  if (!sidebar) {
+    sidebar = document.createElement('div');
+    sidebar.id = 'points-sidebar';
+    sidebar.className = 'points-sidebar';
+    sidebar.innerHTML = `
+      <div class="points-sidebar-title">Punkte vergeben</div>
+      <div class="points-btn-list">
+        ${[10, 20, 30, 40, 50].map(val => `<button class='points-btn' data-points='${val}'>${val}</button>`).join('')}
+      </div>
+      <button class="points-cancel-btn">Abbrechen</button>
+    `;
+    document.body.appendChild(sidebar);
+    sidebar.addEventListener('click', (e) => {
+      if (e.target.classList.contains('points-btn')) {
+        const val = parseInt(e.target.getAttribute('data-points'), 10);
+        if (selectedPlayerId) {
+          awardPoints(selectedPlayerId, val);
+          // hidePointsSidebar(); // Entfernt: Leiste bleibt offen
+        }
+      }
+      if (e.target.classList.contains('points-cancel-btn')) {
+        hidePointsSidebar();
+      }
+    });
+  }
+  // Setze die Primärfarbe als Umrandung/Schatten
+  if (primaryColor) {
+    sidebar.style.border = `4px solid ${primaryColor}`;
+    sidebar.style.boxShadow = `-8px 0 32px ${primaryColor}33`;
+    sidebar.style.background = 'rgba(255,255,255,0.97)';
+    sidebar.style.transition = 'border 0.2s, box-shadow 0.2s, background 0.2s';
+    // Buttons: Umrandung beim Hover
+    sidebar.querySelectorAll('.points-btn').forEach(btn => {
+      btn.onmouseenter = () => {
+        btn.style.borderColor = primaryColor;
+        btn.style.boxShadow = `0 0 0 2px ${primaryColor}`;
+      };
+      btn.onmouseleave = () => {
+        btn.style.borderColor = '#e5e7eb';
+        btn.style.boxShadow = 'none';
+      };
+      btn.style.borderColor = '#e5e7eb';
+      btn.style.background = '#fff';
+      btn.style.color = '#222';
+    });
+  } else {
+    sidebar.style.border = '4px solid #7c3aed';
+    sidebar.style.boxShadow = '-8px 0 32px #7c3aed33';
+    sidebar.style.background = 'rgba(255,255,255,0.97)';
+  }
+  sidebar.style.display = 'block';
+}
+
+function hidePointsSidebar() {
+  const sidebar = document.getElementById('points-sidebar');
+  if (sidebar) sidebar.style.display = 'none';
+  // Markierung entfernen
+  document.querySelectorAll('.player-card.selected-player').forEach(card => {
+    card.classList.remove('selected-player');
+  });
+  selectedPlayerId = null;
+}
+
 // Host-Funktion: Punkte vergeben und an Clients broadcasten
 function awardPoints(playerId, delta) {
   if (!isHost) return;
@@ -620,6 +699,7 @@ function awardPoints(playerId, delta) {
   });
 
   showNotification(`\u2705 ${player.name} erh\u00e4lt ${delta > 0 ? '+' + delta : delta} Punkte (insg. ${player.score})`, 'success', 1800);
+  // hidePointsSidebar(); // Entfernt: Leiste bleibt offen
 }
 
 // ========================================
