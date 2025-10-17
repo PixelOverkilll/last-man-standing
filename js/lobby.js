@@ -529,31 +529,13 @@ function addPlayerToDOM(player) {
     <span class="player-score">${player.score} Punkte</span>
   `;
 
-  // Falls Host: f\u00fcge einen Button hinzu, um Punkte manuell zu geben
-  if (isHost) {
-    const controls = document.createElement('div');
-    controls.className = 'player-controls';
-
-    const giveBtn = document.createElement('button');
-    giveBtn.className = 'give-points-btn';
-    giveBtn.textContent = 'Gib Punkte';
-    giveBtn.style.cssText = 'margin-left:8px;padding:6px 10px;border-radius:8px;background:#7c3aed;color:#fff;border:none;cursor:pointer;font-weight:600;';
-
-    giveBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      handleGivePoints(player.id);
-    });
-
-    controls.appendChild(giveBtn);
-    card.appendChild(controls);
-  }
-
   container.appendChild(card);
 
   extractDominantColor(player.avatar, (color) => {
     applyPlayerColor(card, color);
   });
 
+  // Host kann Spieler auswählen (Klick auf Karte)
   card.addEventListener('click', () => {
     if (!isHost) return;
     selectPlayerForPoints(player.id);
