@@ -631,7 +631,7 @@ function showPointsSidebar(primaryColor) {
         const val = parseInt(e.target.getAttribute('data-points'), 10);
         if (selectedPlayerId) {
           awardPoints(selectedPlayerId, val);
-          hidePointsSidebar();
+          // hidePointsSidebar(); // Entfernt: Leiste bleibt offen
         }
       }
       if (e.target.classList.contains('points-cancel-btn')) {
@@ -699,7 +699,7 @@ function awardPoints(playerId, delta) {
   });
 
   showNotification(`\u2705 ${player.name} erh\u00e4lt ${delta > 0 ? '+' + delta : delta} Punkte (insg. ${player.score})`, 'success', 1800);
-  hidePointsSidebar();
+  // hidePointsSidebar(); // Entfernt: Leiste bleibt offen
 }
 
 // ========================================
