@@ -302,22 +302,58 @@ class P2PConnection {
 
   // Verbindung schließen
   disconnect() {
-    if (this.isHost) {
-      // Host: Alle Verbindungen schließen
-      this.connections.forEach((conn) => {
-        conn.close();
-      });
-      this.connections.clear();
-    } else {
-      // Spieler: Vom Host trennen
-      if (this.hostConnection) {
-        this.hostConnection.close();
+    try {
+      // Host: alle Client-Verbindungen schließen
+      if (this.isHost) {
+        if (this.connections && this.connections.size) {
+          this.connections.forEach((conn) => {
+            try {
+              if (conn && conn.open) conn.close();
+            } catch (e) {
+              console.warn('Warnung beim Schließen einer Client-Verbindung:', e);
+            }
+          });
+          this.connections.clear();
+        }
+      } else {
+        // Spieler: Verbindung zum Host schließen
+        if (this.hostConnection) {
+          try {
+            if (this.hostConnection.open) this.hostConnection.close();
+          } catch (e) {
+            console.warn('Warnung beim Schließen der hostConnection:', e);
+          }
+          this.hostConnection = null;
+        }
       }
-    }
 
-    if (this.peer) {
-      this.peer.destroy();
-      this.peer = null;
+      // Peer aufräumen: Listener entfernen, disconnect/destroy aufrufen
+      if (this.peer) {
+        try {
+          if (typeof this.peer.removeAllListeners === 'function') {
+            try { this.peer.removeAllListeners(); } catch (e) { /* ignore */ }
+          }
+          if (typeof this.peer.disconnect === 'function') {
+            try { this.peer.disconnect(); } catch (e) { /* ignore */ }
+          }
+          if (typeof this.peer.destroy === 'function') {
+            try { this.peer.destroy(); } catch (e) { /* ignore */ }
+          }
+        } catch (e) {
+          console.warn('Warnung beim Aufräumen des Peer-Objekts:', e);
+        }
+        this.peer = null;
+      }
+
+      // Reset interne Zustände
+      this.isHost = false;
+      this.hostConnection = null;
+      this.lobbyCode = null;
+      this.localPlayer = null;
+
+      console.log('🔌 P2P-Verbindungen wurden sauber geschlossen');
+    } catch (error) {
+      console.error('❌ Fehler beim Trennen der P2P-Verbindung:', error);
     }
   }
 }
