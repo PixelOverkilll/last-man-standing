@@ -8,8 +8,42 @@
   <link rel="icon" href="favicon.ico" sizes="any">
   <meta name="theme-color" content="#8b27c4">
 
+  <!-- Configuration Script (must be loaded before socket-client) -->
+  <script src="config.js"></script>
+
   <!-- PeerJS für P2P-Verbindung -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <!-- Dynamically load socket.io client like index.html (CDN for production to avoid ORB) -->
+  <script>
+    (function() {
+      try {
+        var socketScript = '/socket.io/socket.io.js';
+        if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.ENV === 'production' && typeof CONFIG.getSocketUrl === 'function') {
+          socketScript = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+        }
+      } catch (e) {
+        var socketScript = '/socket.io/socket.io.js';
+      }
+
+      function loadScript(src, cb) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false;
+        s.onload = cb || function(){};
+        s.onerror = function(err) { console.error('Failed to load script', src, err); cb && cb(err); };
+        document.head.appendChild(s);
+      }
+
+      // Load socket.io client, then our socket-client
+      loadScript(socketScript, function(err) {
+        if (err) {
+          console.warn('socket.io client failed to load from', socketScript, ' — socket-client may not work');
+        }
+        loadScript('js/socket-client.js');
+      });
+    })();
+  </script>
 
   <!-- Fallback für PeerJS -->
   <script>
