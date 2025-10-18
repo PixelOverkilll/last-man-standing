@@ -1,6 +1,36 @@
 // Client-seitiger Socket.IO-Connector
 (function() {
-  const socket = io();
+  // Versuche, eine Socket-Verbindung aufzubauen.
+  // Priorität: CONFIG.getSocketUrl() (wenn verfügbar) -> io(socketUrl)
+  // Fallback: io() (verwendet vom bestehenden Code)
+
+  let socket;
+  try {
+    const ioAvailable = typeof io === 'function';
+    const configAvailable = typeof CONFIG !== 'undefined' && CONFIG && typeof CONFIG.getSocketUrl === 'function';
+    const socketUrl = configAvailable ? CONFIG.getSocketUrl() : null;
+
+    if (!ioAvailable) {
+      console.error('[socket-client] socket.io client (io) ist nicht verfügbar auf dieser Seite');
+      return;
+    }
+
+    if (socketUrl) {
+      try {
+        console.log('[socket-client] verbinde mit CONFIG Socket URL:', socketUrl);
+        socket = io(socketUrl, { transports: ['websocket', 'polling'] });
+      } catch (err) {
+        console.warn('[socket-client] verbindung zu CONFIG Socket URL fehlgeschlagen, versuche default io():', err);
+        socket = io();
+      }
+    } else {
+      console.log('[socket-client] keine CONFIG Socket URL gefunden, verwende default io()');
+      socket = io();
+    }
+  } catch (err) {
+    console.error('[socket-client] Fehler beim Initialisieren des Sockets:', err);
+    return;
+  }
 
   socket.on('connect', () => {
     console.log('[socket-client] verbunden mit id', socket.id);
@@ -48,4 +78,3 @@
   // Expose for dev console
   window.__LMS_SOCKET = socket;
 })();
-
