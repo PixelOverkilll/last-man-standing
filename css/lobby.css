@@ -606,20 +606,23 @@ body.bg-waves {
 }
 
 /* Markierung für ausgewählte Spielerkarte (farblich an Theme angepasst) */
+/* Präzisiere die Regel: nur direkte .player-card-Elemente mit der Klasse .selected-player sollen grün werden.
+   Entferne !important wo möglich und setze spezifische, aber nicht globale Regeln, damit keine anderen Elemente betroffen sind. */
 .player-card.selected-player {
-  border-color: #7c3aed !important;
-  box-shadow: 0 0 0 4px rgba(124,58,237,0.22), 0 15px 40px rgba(44,0,80,0.18);
-  background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(20, 10, 35, 0.98) 100%);
+  /* grüner Akzent nur für die vom Host markierte Karte */
+  border-color: #10B981; /* Emphatische Farbe */
+  box-shadow: 0 0 0 4px rgba(16,185,129,0.22), 0 15px 40px rgba(4, 74, 40, 0.18);
+  background: linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(20, 10, 35, 0.98) 100%);
 }
 
 .player-card.selected-player .player-avatar {
-  border-color: #7c3aed !important;
-  box-shadow: 0 0 25px #7c3aed;
+  border-color: #10B981; /* Avatar-Ring wird grün */
+  box-shadow: 0 0 25px #10B981;
 }
 
 .player-card.selected-player .player-score {
-  border-color: #7c3aed !important;
-  background: rgba(124,58,237,0.18);
+  border-color: #10B981; /* Score-Ring wird grün */
+  background: rgba(16,185,129,0.18);
   color: #fff;
 }
 
