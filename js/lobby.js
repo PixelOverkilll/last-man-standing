@@ -392,8 +392,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       // Host verwendet den Code aus der URL
       await createLobby(lobbyCode);
       displayHostInfo();
-      // Zeige nur generische Erfolgsmeldung statt den Code in der Notification
-      showNotification('✅ Lobby erfolgreich erstellt', 'success', 3000);
+      // don't show duplicate notification here; createLobby already shows a generic success toast
       localStorage.setItem('lobbyCode', lobbyCode);
       console.log('✅ Host-Lobby bereit. Warte auf Spieler...');
     } else {
@@ -599,20 +598,47 @@ function awardPoints(playerId, delta) {
 // Nach dem Setzen des Lobby-Codes:
 function updateLobbyCodeDisplay(code) {
   const codeDisplay = document.getElementById('lobby-code-display');
-  if (codeDisplay) codeDisplay.textContent = code;
+  const container = document.getElementById('lobby-code-container');
+  const teaser = document.getElementById('lobby-code-teaser');
+  const copyCodeBtn = document.getElementById('copy-code-btn');
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+
+  if (codeDisplay) codeDisplay.textContent = code || '------';
+
+  if (!container) return;
+
+  // Hosts sehen den vollständigen Code und beide Buttons
+  if (isHost && code) {
+    container.classList.add('lobby-code-visible');
+    container.style.display = 'flex';
+    if (codeDisplay) { codeDisplay.style.visibility = 'visible'; codeDisplay.textContent = code; }
+    if (teaser) teaser.style.display = 'none';
+    if (copyCodeBtn) copyCodeBtn.style.display = 'inline-block';
+    if (copyLinkBtn) copyLinkBtn.style.display = 'inline-block';
+  } else {
+    // Clients sehen einen Teaser und nur den Link-Kopieren Button (kein direkter Code)
+    container.classList.remove('lobby-code-visible');
+    container.style.display = 'flex';
+    if (codeDisplay) { codeDisplay.style.visibility = 'hidden'; codeDisplay.textContent = '------'; }
+    if (teaser) teaser.style.display = 'inline-block';
+    if (copyCodeBtn) copyCodeBtn.style.display = 'none';
+    if (copyLinkBtn) copyLinkBtn.style.display = 'inline-block';
+  }
 }
 
 // Kopierfunktion für den Lobby-Code — nutzt Clipboard API mit Fallback
 function copyLobbyCode() {
   try {
+    if (!isHost) return; // nur Host darf Code direkt kopieren
     const codeEl = document.getElementById('lobby-code-display');
     if (!codeEl) return;
     const text = (codeEl.textContent || codeEl.innerText || '').trim();
-    if (!text) return;
+    if (!text || text === '------') return;
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(() => {
         showNotification('✅ Lobby-Code kopiert', 'success', 1500);
+        const btn = document.getElementById('copy-code-btn'); if (btn) showCopyTooltip(btn, 'Kopiert!');
       }).catch(() => {
         // fallback to older method
         fallbackCopyTextToClipboard(text);
@@ -625,45 +651,71 @@ function copyLobbyCode() {
   }
 }
 
-function fallbackCopyTextToClipboard(text) {
+// Kopiert die vollständige Lobby-URL (mit ?code=) — für Host & Clients verfügbar
+function copyLobbyLink() {
   try {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    // Prevent scrolling to bottom
-    ta.style.position = 'fixed';
-    ta.style.top = '0';
-    ta.style.left = '0';
-    ta.style.width = '1px';
-    ta.style.height = '1px';
-    ta.style.padding = '0';
-    ta.style.border = 'none';
-    ta.style.outline = 'none';
-    ta.style.boxShadow = 'none';
-    ta.style.background = 'transparent';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
+    if (!lobbyCode) return;
+    const url = new URL(window.location.href);
+    // Verwende aktuellen Pfad und setze code param
+    url.searchParams.set('code', lobbyCode);
+    // Entferne mögliche andere, für Sicherheit: nur origin + pathname + params + hash
+    const fullUrl = url.origin + url.pathname + '?' + url.searchParams.toString() + (url.hash || '');
 
-    try {
-      const ok = document.execCommand('copy');
-      if (ok) showNotification('✅ Lobby-Code kopiert', 'success', 1500);
-      else showNotification('⚠️ Kopieren fehlgeschlagen', 'error', 1800);
-    } catch (err) {
-      console.error('Fallback copy failed', err);
-      showNotification('⚠️ Kopieren fehlgeschlagen', 'error', 1800);
+    const btn = document.getElementById('copy-link-btn');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fullUrl).then(() => {
+        showNotification('✅ Lobby-Link kopiert', 'success', 1500);
+        if (btn) showCopyTooltip(btn, 'Link kopiert!');
+      }).catch(() => {
+        fallbackCopyTextToClipboard(fullUrl);
+      });
+    } else {
+      fallbackCopyTextToClipboard(fullUrl);
     }
-
-    ta.remove();
   } catch (e) {
-    console.error('fallbackCopyTextToClipboard error', e);
+    console.error('copyLobbyLink error', e);
   }
 }
 
-// Join-Funktion über Eingabefeld
-function joinLobbyByInput() {
-  const input = document.getElementById('join-code-input');
-  if (input && input.value) {
-    joinLobby(input.value.trim());
+// Kleiner Tooltip / Animation neben dem Button
+function showCopyTooltip(button, text) {
+  try {
+    const tip = document.createElement('div');
+    tip.className = 'copy-tooltip';
+    tip.textContent = text || 'Kopiert!';
+    document.body.appendChild(tip);
+
+    const rect = button.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const left = rect.left + rect.width / 2 - 40; // center-ish
+    const top = rect.top + scrollTop - 36; // above the button
+
+    tip.style.position = 'absolute';
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.style.background = '#7c3aed';
+    tip.style.color = '#fff';
+    tip.style.padding = '6px 10px';
+    tip.style.borderRadius = '6px';
+    tip.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
+    tip.style.zIndex = 1200;
+    tip.style.opacity = '0';
+    tip.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
+    tip.style.transform = 'translateY(6px)';
+
+    requestAnimationFrame(() => {
+      tip.style.opacity = '1';
+      tip.style.transform = 'translateY(0)';
+    });
+
+    setTimeout(() => {
+      tip.style.opacity = '0';
+      tip.style.transform = 'translateY(-6px)';
+      setTimeout(() => tip.remove(), 220);
+    }, 1200);
+  } catch (e) {
+    console.error('showCopyTooltip error', e);
   }
 }
 
@@ -721,7 +773,7 @@ function initUI() {
       hostEvalButtons.setAttribute('aria-hidden', 'false');
     }
   } else {
-    if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'none';
+    // Nicht mehr komplett ausblenden: updateLobbyCodeDisplay zeigt für Clients einen Teaser und den Link-Button
     if (hostControls) hostControls.style.display = 'none';
     if (hostEvalButtons) {
       hostEvalButtons.style.display = 'none';

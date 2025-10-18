@@ -225,42 +225,49 @@ body.bg-waves {
   letter-spacing: 2px;
 }
 
+/* Verbesserte Darstellung für Lobby-Code */
 .lobby-code-display {
-  background: rgba(30, 15, 45, 0.98);
-  border: 3px solid #7c3aed;
-  border-radius: 18px;
-  padding: 12px 28px;
-  display: inline-block;
-  box-shadow: 0 8px 25px rgba(124, 58, 237, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(0,0,0,0.15);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 2px solid rgba(124,58,237,0.25);
 }
 
-.code-label {
-  color: #c4b5fd;
-  font-size: clamp(0.85rem, 1.8vw, 1rem);
-  margin-right: 10px;
+.lobby-code-display .code-label {
   font-weight: 600;
+  color: #fff;
+  margin-right: 6px;
 }
 
-.code-value {
-  font-family: 'Courier New', monospace;
-  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-  font-weight: 800;
-  color: #e9d5ff;
-  letter-spacing: 3px;
+.lobby-code-display .code-value {
+  font-family: 'Roboto Mono', 'Courier New', monospace;
+  font-weight: 700;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  letter-spacing: 2px;
 }
 
-/* Question Area - Kleiner */
-.question-area {
-  background: rgba(30, 15, 45, 0.98);
-  border: 3px solid #7c3aed;
-  border-radius: 22px;
-  padding: clamp(35px, 5vh, 65px) clamp(25px, 4vw, 50px);
-  width: 100%;
-  max-width: 650px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
-  position: relative;
-  z-index: 50;
+#copy-code-btn {
+  background: linear-gradient(90deg, #7c3aed, #a78bfa);
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
 }
+
+#copy-code-btn:hover { opacity: 0.95; }
+
+/* ensure lobby code area doesn't flash before JS initializes */
+#lobby-code-container { visibility: hidden; }
+
+/* when visible via JS we switch to visible */
+.lobby-code-visible { visibility: visible !important; }
 
 .waiting-message {
   text-align: center;

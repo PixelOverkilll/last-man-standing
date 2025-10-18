@@ -20,6 +20,17 @@
     });
   }
 
+  function smallNotify(message, type = 'info', duration = 2500) {
+    try {
+      const colors = { success: 'rgba(16, 185, 129, 0.95)', error: 'rgba(239, 68, 68, 0.95)', info: 'rgba(124, 58, 237, 0.95)' };
+      const n = document.createElement('div');
+      n.textContent = message;
+      n.style.cssText = `position:fixed;top:80px;right:20px;background:${colors[type]||colors.info};color:#fff;padding:10px 16px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,0.4);z-index:9999;font-weight:600;`;
+      document.body.appendChild(n);
+      setTimeout(() => { n.style.opacity = '0'; n.style.transition = 'opacity 0.25s ease'; setTimeout(() => n.remove(), 250); }, duration);
+    } catch (e) { console.log('notify:', message); }
+  }
+
   async function initSocketClient() {
     // Ensure socket.io client is available (try to load from CDN if necessary)
     try {
@@ -94,7 +105,7 @@
           socket.emit('create-lobby', { mode: 'default' }, (res) => {
             console.log('[socket-client] create-lobby result', res);
             if (res && res.lobbyId) {
-              alert('Lobby erstellt: ' + res.lobbyId);
+              smallNotify('Lobby erstellt — Code in Lobbyseite (sichtbar nur für Host)', 'success', 3000);
             }
           });
         });
@@ -103,11 +114,11 @@
       if (joinBtn) {
         joinBtn.addEventListener('click', () => {
           const code = lobbyInput ? lobbyInput.value.trim() : '';
-          if (!code) return alert('Bitte Lobby-Code eingeben');
+          if (!code) return smallNotify('Bitte Lobby-Code eingeben', 'error', 2200);
           socket.emit('join-lobby', { lobbyId: code }, (res) => {
             console.log('[socket-client] join-lobby result', res);
             if (res && res.ok) {
-              alert('Lobby beigetreten: ' + code);
+              smallNotify('Lobby beigetreten', 'success', 2200);
             }
           });
         });
