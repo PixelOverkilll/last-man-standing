@@ -111,16 +111,10 @@
   <div class="quiz-container">
     <div class="quiz-header">
       <h1 class="quiz-title">Last Man Standing</h1>
-      <div class="lobby-code-display" id="lobby-code-container">
+      <div class="lobby-code-display" id="lobby-code-container" style="display:none;">
         <span class="code-label">Lobby-Code:</span>
         <code class="code-value" id="lobby-code-display">------</code>
-        <input type="text" id="lobby-code-copy" readonly style="margin-left:10px;width:120px;">
-        <button onclick="copyLobbyCode()" id="copy-code-btn">Code kopieren</button>
-      </div>
-      <div class="join-lobby-area" style="margin-top:20px;">
-        <label for="join-code-input">Lobby-Code eingeben:</label>
-        <input type="text" id="join-code-input" maxlength="8" style="width:120px;">
-        <button onclick="joinLobbyByInput()" id="join-lobby-btn">Lobby beitreten</button>
+        <button onclick="copyLobbyCode()" id="copy-code-btn" style="margin-left:12px;">Code kopieren</button>
       </div>
     </div>
 

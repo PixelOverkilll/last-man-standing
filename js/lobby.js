@@ -260,6 +260,9 @@ async function createLobby(code) {
       // Aktualisiere UI mit dem neuen Code
       try { updateLobbyCodeDisplay(lobbyCode); } catch (e) { /* ignore */ }
 
+      // Show a generic success notification (do not expose code in the toast)
+      try { showNotification('✅ Lobby erfolgreich erstellt', 'success', 2500); } catch(e){}
+
       resolve(lobbyCode);
     });
   });
@@ -389,7 +392,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       // Host verwendet den Code aus der URL
       await createLobby(lobbyCode);
       displayHostInfo();
-      showNotification('✅ Lobby erstellt! Code: ' + lobbyCode, 'success', 3000);
+      // Zeige nur generische Erfolgsmeldung statt den Code in der Notification
+      showNotification('✅ Lobby erfolgreich erstellt', 'success', 3000);
       localStorage.setItem('lobbyCode', lobbyCode);
       console.log('✅ Host-Lobby bereit. Warte auf Spieler...');
     } else {
@@ -595,18 +599,63 @@ function awardPoints(playerId, delta) {
 // Nach dem Setzen des Lobby-Codes:
 function updateLobbyCodeDisplay(code) {
   const codeDisplay = document.getElementById('lobby-code-display');
-  const codeCopy = document.getElementById('lobby-code-copy');
   if (codeDisplay) codeDisplay.textContent = code;
-  if (codeCopy) codeCopy.value = code;
 }
 
-// Kopierfunktion für den Lobby-Code
+// Kopierfunktion für den Lobby-Code — nutzt Clipboard API mit Fallback
 function copyLobbyCode() {
-  const codeCopy = document.getElementById('lobby-code-copy');
-  if (codeCopy) {
-    codeCopy.select();
-    codeCopy.setSelectionRange(0, 999); // Für mobile Geräte
-    document.execCommand('copy');
+  try {
+    const codeEl = document.getElementById('lobby-code-display');
+    if (!codeEl) return;
+    const text = (codeEl.textContent || codeEl.innerText || '').trim();
+    if (!text) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showNotification('✅ Lobby-Code kopiert', 'success', 1500);
+      }).catch(() => {
+        // fallback to older method
+        fallbackCopyTextToClipboard(text);
+      });
+    } else {
+      fallbackCopyTextToClipboard(text);
+    }
+  } catch (e) {
+    console.error('copyLobbyCode error', e);
+  }
+}
+
+function fallbackCopyTextToClipboard(text) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    // Prevent scrolling to bottom
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.width = '1px';
+    ta.style.height = '1px';
+    ta.style.padding = '0';
+    ta.style.border = 'none';
+    ta.style.outline = 'none';
+    ta.style.boxShadow = 'none';
+    ta.style.background = 'transparent';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+
+    try {
+      const ok = document.execCommand('copy');
+      if (ok) showNotification('✅ Lobby-Code kopiert', 'success', 1500);
+      else showNotification('⚠️ Kopieren fehlgeschlagen', 'error', 1800);
+    } catch (err) {
+      console.error('Fallback copy failed', err);
+      showNotification('⚠️ Kopieren fehlgeschlagen', 'error', 1800);
+    }
+
+    ta.remove();
+  } catch (e) {
+    console.error('fallbackCopyTextToClipboard error', e);
   }
 }
 
