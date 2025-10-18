@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const createLobbyBtn = document.getElementById('create-lobby-btn');
   const joinLobbyBtn = document.getElementById('join-lobby-btn');
   const lobbyCodeInput = document.getElementById('lobby-code');
+  const closeAllLobbiesBtn = document.getElementById('close-all-lobbies-btn');
 
   // Background Selector
   const bgButtons = document.querySelectorAll('.bg-btn');
@@ -349,6 +350,34 @@ document.addEventListener('DOMContentLoaded', function() {
     loginSection.style.display = 'block';
     userSection.style.display = 'none';
   });
+
+  // Button: Alle Lobby-Verbindungen schließen (Broadcast an andere Tabs)
+  if (closeAllLobbiesBtn) {
+    closeAllLobbiesBtn.addEventListener('click', function() {
+      if (!confirm('Alle Lobby-Verbindungen in anderen Tabs schließen?')) return;
+      showNotification('Schließe alle Lobby-Verbindungen...', 'info', 2000);
+
+      // Try BroadcastChannel first
+      try {
+        const bc = new BroadcastChannel('lobby-control');
+        bc.postMessage({ action: 'close-all' });
+        bc.close();
+      } catch (e) {
+        console.warn('BroadcastChannel nicht verfügbar, verwende localStorage-Fallback', e);
+      }
+
+      // localStorage fallback — andere Tabs hören auf 'storage' events
+      try {
+        localStorage.setItem('closeAllLobbies', Date.now().toString());
+        // kurz danach entfernen, damit das key nicht dauerhaft bleibt
+        setTimeout(() => {
+          try { localStorage.removeItem('closeAllLobbies'); } catch (e) { /* ignore */ }
+        }, 500);
+      } catch (e) {
+        console.warn('localStorage-Fallback fehlgeschlagen', e);
+      }
+    });
+  }
 
   // Check if lobby code is valid
   function isLobbyCodeValid() {

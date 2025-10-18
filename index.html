@@ -110,10 +110,17 @@
               <h2 class="user-name" id="user-name">Username</h2>
               <p class="user-discriminator" id="user-discriminator">#0000</p>
             </div>
-            <button class="btn btn-logout" id="logout-btn">
-              <span class="btn-icon">🚪</span>
-              Abmelden
-            </button>
+            <div class="user-actions">
+              <button class="btn btn-logout" id="logout-btn">
+                <span class="btn-icon">🚪</span>
+                Abmelden
+              </button>
+              <!-- Neuer Button: Alle Lobby-Verbindungen schließen -->
+              <button class="btn btn-danger" id="close-all-lobbies-btn" title="Schließt alle offenen Lobby-Verbindungen in anderen Tabs">
+                <span class="btn-icon">🧹</span>
+                Alle Lobby-Verbindungen schließen
+              </button>
+            </div>
           </div>
         </div>
 

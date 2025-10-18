@@ -160,6 +160,16 @@ function cleanupPeer() {
       } catch (e) {
         console.warn('Warnung beim Schließen von hostConnection:', e);
       }
+
+      // Versuche zusätzlich das zugrunde liegende RTCPeerConnection-Objekt zu schließen
+      try {
+        if (hostConnection._pc && typeof hostConnection._pc.close === 'function') hostConnection._pc.close();
+        if (hostConnection.peerConnection && typeof hostConnection.peerConnection.close === 'function') hostConnection.peerConnection.close();
+        if (hostConnection._negotiator && hostConnection._negotiator._pc && typeof hostConnection._negotiator._pc.close === 'function') hostConnection._negotiator._pc.close();
+      } catch (e) {
+        /* ignore */
+      }
+
       hostConnection = null;
     }
 
@@ -170,6 +180,15 @@ function cleanupPeer() {
           if (c && c.open) c.close();
         } catch (e) {
           console.warn('Warnung beim Schließen einer Verbindung:', e);
+        }
+
+        // Versuche zusätzlich das zugrunde liegende RTCPeerConnection-Objekt zu schließen
+        try {
+          if (c && c._pc && typeof c._pc.close === 'function') c._pc.close();
+          if (c && c.peerConnection && typeof c.peerConnection.close === 'function') c.peerConnection.close();
+          if (c && c._negotiator && c._negotiator._pc && typeof c._negotiator._pc.close === 'function') c._negotiator._pc.close();
+        } catch (e) {
+          /* ignore */
         }
       });
       connections.clear();
@@ -185,6 +204,25 @@ function cleanupPeer() {
 
         // Versuche zuerst eine saubere Trennung
         try { if (typeof peer.disconnect === 'function') peer.disconnect(); } catch (e) { /* ignore */ }
+
+        // Versuche zusätzlich alle intern gehaltenen DataConnections zu schließen (PeerJS intern pflegt peer.connections)
+        try {
+          if (peer.connections) {
+            Object.keys(peer.connections).forEach(key => {
+              const arr = peer.connections[key] || [];
+              arr.forEach(dconn => {
+                try {
+                  if (dconn && typeof dconn.close === 'function') dconn.close();
+                } catch (e) { /* ignore */ }
+                try {
+                  if (dconn && dconn._pc && typeof dconn._pc.close === 'function') dconn._pc.close();
+                  if (dconn && dconn.peerConnection && typeof dconn.peerConnection.close === 'function') dconn.peerConnection.close();
+                  if (dconn && dconn._negotiator && dconn._negotiator._pc && typeof dconn._negotiator._pc.close === 'function') dconn._negotiator._pc.close();
+                } catch (e) { /* ignore */ }
+              });
+            });
+          }
+        } catch (e) { /* ignore */ }
 
         // Zwinge Zerstörung
         try { if (typeof peer.destroy === 'function') peer.destroy(); } catch (e) { /* ignore */ }
@@ -913,6 +951,35 @@ window.addEventListener('beforeunload', function() {
   }
 });
 
+// BroadcastChannel und storage-Listener, damit andere Tabs aufgefordert werden können aufzuräumen
+try {
+  const lobbyControlChannel = new BroadcastChannel('lobby-control');
+  lobbyControlChannel.addEventListener('message', (evt) => {
+    try {
+      if (evt && evt.data && evt.data.action === 'close-all') {
+        console.log('📣 Broadcast: Schließe alle Lobby-Verbindungen');
+        cleanupPeer();
+      }
+    } catch (e) {
+      console.warn('Fehler beim Verarbeiten der Broadcast-Nachricht:', e);
+    }
+  });
+} catch (e) {
+  // BroadcastChannel nicht unterstützt - Fallback via localStorage events verwendet weiter unten
+}
+
+// Storage-Event: reagiert auf setItem von anderen Tabs
+window.addEventListener('storage', (evt) => {
+  try {
+    if (evt.key === 'closeAllLobbies') {
+      console.log('📣 Storage-Event: Schließe alle Lobby-Verbindungen (key closeAllLobbies)');
+      cleanupPeer();
+    }
+  } catch (e) {
+    console.warn('Fehler beim Verarbeiten des storage-events:', e);
+  }
+});
+
 // ========================================
 // CSS Animation
 // ========================================
@@ -948,3 +1015,79 @@ function applySavedBackground() {
 }
 
 console.log('✅ Lobby System MIT P2P geladen!');
+
+// Debug-Hilfe: Berichte aktuellen P2P-Status in der Konsole
+window.reportP2PStatus = function() {
+  try {
+    console.log('--- P2P STATUS REPORT ---');
+    console.log('isHost:', isHost);
+    console.log('lobbyCode:', lobbyCode);
+    console.log('peer object:', peer);
+
+    const report = {
+      isHost: !!isHost,
+      lobbyCode: lobbyCode || null,
+      peerConnections: []
+    };
+
+    function inspectPC(pc) {
+      try {
+        const state = {
+          iceConnectionState: pc.iceConnectionState,
+          connectionState: pc.connectionState || null,
+          localDescription: !!pc.localDescription,
+          remoteDescription: !!pc.remoteDescription
+        };
+        // stop senders' tracks to try release NAT keepalives
+        try {
+          if (pc.getSenders) {
+            pc.getSenders().forEach(s => { try { if (s && s.track) s.track.stop(); } catch(e){} });
+          }
+        } catch (e) { /* ignore */ }
+        return state;
+      } catch (e) {
+        return { error: String(e) };
+      }
+    }
+
+    try {
+      if (peer && peer.connections) {
+        Object.keys(peer.connections).forEach(k => {
+          const arr = peer.connections[k] || [];
+          arr.forEach((c) => {
+            const pc = c._pc || c.peerConnection || (c._negotiator && c._negotiator._pc) || null;
+            const entry = { peerId: c.peer, open: !!c.open, pc: null };
+            if (pc) entry.pc = inspectPC(pc);
+            report.peerConnections.push(entry);
+          });
+        });
+      }
+    } catch (e) { console.warn('Fehler beim Zugriff auf peer.connections:', e); }
+
+    try {
+      if (hostConnection) {
+        const pc = hostConnection._pc || hostConnection.peerConnection || (hostConnection._negotiator && hostConnection._negotiator._pc) || null;
+        const entry = { peerId: hostConnection.peer, open: !!hostConnection.open, pc: null };
+        if (pc) entry.pc = inspectPC(pc);
+        report.peerConnections.push(entry);
+      }
+    } catch (e) { /* ignore */ }
+
+    // Also check connections Map
+    if (connections && connections.size) {
+      connections.forEach((c, id) => {
+        const pc = c._pc || c.peerConnection || (c._negotiator && c._negotiator._pc) || null;
+        const entry = { mapKey: id, peerId: c.peer, open: !!c.open, pc: null };
+        if (pc) entry.pc = inspectPC(pc);
+        report.peerConnections.push(entry);
+      });
+    }
+
+    console.log('P2P Report summary:', report);
+    console.log('--- END P2P STATUS REPORT ---');
+    return report;
+  } catch (e) {
+    console.error('Fehler beim Erstellen des P2P-Statusreports:', e);
+    return { error: String(e) };
+  }
+};
