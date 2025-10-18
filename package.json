@@ -23,8 +23,9 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
-    "peerjs": "^1.5.5",
     "express": "^4.18.2",
+    "localtunnel": "^2.0.2",
+    "peerjs": "^1.5.5",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2"
   }

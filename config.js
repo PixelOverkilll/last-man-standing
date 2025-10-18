@@ -34,6 +34,15 @@ const CONFIG = {
     }
   },
 
+  // Socket server URL (for lobby/socket connections)
+  SOCKET: {
+    BASE_URL: {
+      development: 'http://localhost:3000',
+      // NOTE: this will be patched at runtime when a tunnel is created; default production value is placeholder
+      production: 'https://bad-otter-98.loca.lt'
+    }
+  },
+
   // Get current redirect URI based on environment
   getRedirectUri() {
     return this.DISCORD.REDIRECT_URI[this.ENV];
@@ -63,6 +72,11 @@ const CONFIG = {
   // Get Game State API URL
   getGameStateUrl(lobbyCode) {
     return `${this.getBotApiUrl()}${this.BOT_API.ENDPOINTS.gameState}/${lobbyCode}`;
+  },
+
+  // Get Socket server URL
+  getSocketUrl() {
+    return this.SOCKET.BASE_URL[this.ENV];
   }
 };
 
@@ -70,3 +84,4 @@ const CONFIG = {
 console.log(`🚀 Running in ${CONFIG.ENV} mode`);
 console.log(`📍 Redirect URI: ${CONFIG.getRedirectUri()}`);
 console.log(`🤖 Bot API: ${CONFIG.getBotApiUrl()}`);
+console.log(`🔌 Socket URL: ${CONFIG.getSocketUrl()}`);
