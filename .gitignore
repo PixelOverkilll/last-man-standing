@@ -27,3 +27,6 @@ build/
 
 # XAMPP Test-Ordner (nicht hochladen)
 # Nur falls du lokale Kopien hast
+
+# Local helper files to ignore
+commit_diff.txt
