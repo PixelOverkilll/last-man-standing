@@ -256,6 +256,10 @@ async function createLobby(code) {
       localStorage.setItem('lobbyCode', lobbyCode);
       localStorage.setItem('isHost', 'true');
       console.log('Lobby erstellt', lobbyCode);
+
+      // Aktualisiere UI mit dem neuen Code
+      try { updateLobbyCodeDisplay(lobbyCode); } catch (e) { /* ignore */ }
+
       resolve(lobbyCode);
     });
   });
@@ -285,6 +289,10 @@ async function joinLobby(code) {
       localStorage.setItem('lobbyCode', lobbyCode);
       localStorage.setItem('isHost', 'false');
       console.log('Erfolgreich der Lobby beigetreten', lobbyCode);
+
+      // Aktualisiere UI mit dem Code (falls angezeigt)
+      try { updateLobbyCodeDisplay(lobbyCode); } catch (e) { /* ignore */ }
+
       resolve(res);
     });
   });
@@ -653,9 +661,8 @@ function initUI() {
   const hostControls = document.getElementById('host-controls');
   const hostEvalButtons = document.getElementById('host-eval-buttons');
 
-  if (lobbyCodeDisplay) {
-    lobbyCodeDisplay.textContent = lobbyCode;
-  }
+  // Setze den Code (falls bereits vorhanden)
+  try { updateLobbyCodeDisplay(lobbyCode); } catch (e) {}
 
   if (isHost) {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
