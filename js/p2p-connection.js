@@ -41,8 +41,14 @@ class P2PConnection {
         resolve(id);
       });
 
+      // Verbesserte Fehlerbehandlung für PeerJS-Verbindungen
       this.peer.on('error', (error) => {
-        console.error('❌ Peer Error:', error);
+        console.error('❌ Peer Error beim Erstellen der Lobby:', error);
+        if (error.type === 'unavailable-id') {
+          console.error('⚠️ Der Lobby-Code ist bereits vergeben. Versuche es erneut.');
+        } else {
+          console.error('⚠️ Ein unbekannter Fehler ist aufgetreten:', error.message);
+        }
         reject(error);
       });
 
@@ -92,8 +98,14 @@ class P2PConnection {
           resolve(conn);
         });
 
+        // Zusätzliche Fehlerbehandlung für Verbindungsprobleme
         conn.on('error', (error) => {
           console.error('❌ Verbindungsfehler:', error);
+          if (error.message.includes('disconnected')) {
+            console.error('⚠️ Verbindung wurde unerwartet getrennt.');
+          } else {
+            console.error('⚠️ Ein unbekannter Verbindungsfehler ist aufgetreten:', error.message);
+          }
           reject(error);
         });
       });
@@ -159,54 +171,61 @@ class P2PConnection {
 
   // Nachricht verarbeiten
   handleMessage(data, conn) {
-    console.log('📨 Nachricht empfangen:', data);
+    try {
+      if (!data || typeof data.type !== 'string') {
+        throw new Error('Ungültige Nachricht erhalten.');
+      }
+      console.log('📨 Nachricht empfangen:', data);
 
-    switch (data.type) {
-      case 'player-join':
-        if (this.isHost) {
-          const player = data.player;
-          this.connections.set(player.id, conn);
-          conn.metadata = { player: player };
-        }
-        break;
+      switch (data.type) {
+        case 'player-join':
+          if (this.isHost) {
+            const player = data.player;
+            this.connections.set(player.id, conn);
+            conn.metadata = { player: player };
+          }
+          break;
 
-      case 'lobby-state':
-        // Empfange Lobby-Status vom Host
-        if (!this.isHost && this.onGameStateUpdate) {
-          this.onGameStateUpdate(data);
-        }
-        break;
+        case 'lobby-state':
+          // Empfange Lobby-Status vom Host
+          if (!this.isHost && this.onGameStateUpdate) {
+            this.onGameStateUpdate(data);
+          }
+          break;
 
-      case 'player-joined':
-        if (this.onPlayerJoined) {
-          this.onPlayerJoined(data.player);
-        }
-        break;
+        case 'player-joined':
+          if (this.onPlayerJoined) {
+            this.onPlayerJoined(data.player);
+          }
+          break;
 
-      case 'player-left':
-        if (this.onPlayerLeft) {
-          this.onPlayerLeft(data.playerId);
-        }
-        break;
+        case 'player-left':
+          if (this.onPlayerLeft) {
+            this.onPlayerLeft(data.playerId);
+          }
+          break;
 
-      case 'game-start':
-        if (this.onMessageReceived) {
-          this.onMessageReceived('game-start', data);
-        }
-        break;
+        case 'game-start':
+          if (this.onMessageReceived) {
+            this.onMessageReceived('game-start', data);
+          }
+          break;
 
-      case 'question':
-      case 'answer':
-      case 'results':
-        if (this.onMessageReceived) {
-          this.onMessageReceived(data.type, data);
-        }
-        break;
+        case 'question':
+        case 'answer':
+        case 'results':
+          if (this.onMessageReceived) {
+            this.onMessageReceived(data.type, data);
+          }
+          break;
 
-      default:
-        if (this.onMessageReceived) {
-          this.onMessageReceived(data.type, data);
-        }
+        default:
+          if (this.onMessageReceived) {
+            this.onMessageReceived(data.type, data);
+          }
+      }
+    } catch (error) {
+      console.error('❌ Fehler bei der Nachrichtenverarbeitung:', error.message);
     }
   }
 
@@ -241,17 +260,11 @@ class P2PConnection {
     if (!this.isHost) return;
 
     const conn = this.connections.get(playerId);
-    if (conn && conn.open) {
+    if (conn) {
       conn.send(data);
-    }
-  }
-
-  // Nachricht an Host senden (Spieler)
-  sendToHost(data) {
-    if (this.isHost) return;
-
-    if (this.hostConnection && this.hostConnection.open) {
-      this.hostConnection.send(data);
+      console.log('📤 Nachricht gesendet an', playerId, ':', data);
+    } else {
+      console.error('❌ Verbindung zu Spieler', playerId, 'nicht gefunden.');
     }
   }
 
@@ -259,32 +272,24 @@ class P2PConnection {
   broadcast(data) {
     if (!this.isHost) return;
 
-    this.connections.forEach((conn, playerId) => {
-      if (conn.open) {
-        conn.send(data);
-      }
+    this.connections.forEach((conn) => {
+      conn.send(data);
     });
+    console.log('📢 Nachricht an alle gesendet:', data);
   }
 
-  // Lobby-Code generieren
+  // Spielerinformationen aktualisieren
+  updatePlayerInfo(playerId, info) {
+    const conn = this.connections.get(playerId);
+    if (conn) {
+      conn.metadata = { player: { ...conn.metadata.player, ...info } };
+      console.log('🔄 Spielerinfo aktualisiert für', playerId, ':', info);
+    }
+  }
+
+  // Lobby-Code generieren (einfaches Beispiel)
   generateLobbyCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
-
-  // Alle Spieler abrufen
-  getPlayers() {
-    if (this.isHost) {
-      return Array.from(this.connections.entries()).map(([id, conn]) => ({
-        id: id,
-        ...conn.metadata?.player
-      }));
-    }
-    return [];
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
   }
 
   // Verbindung schließen
@@ -304,53 +309,9 @@ class P2PConnection {
 
     if (this.peer) {
       this.peer.destroy();
-    }
-  }
-
-  // Alle Verbindungen und Peer sauber schließen
-  disconnectAll() {
-    // Alle Verbindungen schließen
-    if (this.connections && this.connections.size > 0) {
-      for (const [playerId, conn] of this.connections.entries()) {
-        try {
-          conn.close();
-        } catch (e) {
-          console.warn('Fehler beim Schließen der Verbindung:', playerId, e);
-        }
-      }
-      this.connections.clear();
-    }
-    // Host-Verbindung schließen
-    if (this.hostConnection) {
-      try {
-        this.hostConnection.close();
-      } catch (e) {
-        console.warn('Fehler beim Schließen der Host-Verbindung:', e);
-      }
-      this.hostConnection = null;
-    }
-    // Peer-Objekt zerstören
-    if (this.peer) {
-      try {
-        this.peer.destroy();
-      } catch (e) {
-        console.warn('Fehler beim Zerstören des Peer-Objekts:', e);
-      }
       this.peer = null;
     }
-    // Lobby-Code und lokale Spieler-Referenz entfernen
-    this.lobbyCode = null;
-    this.localPlayer = null;
-    // Event-Handler entfernen
-    this.onPlayerJoined = null;
-    this.onPlayerLeft = null;
-    this.onGameStateUpdate = null;
-    this.onMessageReceived = null;
-    this.isHost = false;
   }
 }
 
-// Export für ES6 Module
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = P2PConnection;
-}
+module.exports = P2PConnection;
