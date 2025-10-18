@@ -361,13 +361,13 @@ body.bg-waves {
   }
 
   .btn-correct {
-    background: rgba(52, 211, 153, 0.85); /* Neue, passendere Farbe */
-    border-color: #10b981;
+    background: #39ff14; /* Neon-Grün */
+    border-color: #32cd12;
   }
 
   .btn-correct:hover {
-    background: rgba(52, 211, 153, 1);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.7);
+    background: #32cd12;
+    box-shadow: 0 6px 20px rgba(50, 205, 18, 0.7);
   }
 
   .btn-wrong {
