@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Create Lobby Button
-  createLobbyBtn.addEventListener('click', function() {
+  createLobbyBtn.addEventListener('click', async function() {
     // WICHTIG: Prüfe ob User eingeloggt ist
     const storedUser = localStorage.getItem('discordUser');
 
@@ -379,9 +379,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
     console.log('✅ Discord User gefunden:', storedUser);
 
-    // Admin-Passwort abfragen
-    const adminPassword = prompt('🔐 Admin-Passwort eingeben um Lobby zu erstellen:');
+    // Admin-Passwort abfragen via Modal (anstatt prompt)
+    const adminPassword = await new Promise((resolve) => {
+      const modal = document.getElementById('admin-modal');
+      const input = document.getElementById('admin-password-input');
+      const btnSubmit = document.getElementById('admin-modal-submit');
+      const btnCancel = document.getElementById('admin-modal-cancel');
+      const btnClose = document.getElementById('admin-modal-close');
 
+      function cleanup() {
+        // hide modal and remove listeners
+        modal.classList.remove('admin-modal-open');
+        modal.setAttribute('aria-hidden', 'true');
+        input.value = '';
+        btnSubmit.removeEventListener('click', onSubmit);
+        btnCancel.removeEventListener('click', onCancel);
+        btnClose.removeEventListener('click', onCancel);
+        modal.removeEventListener('keydown', onKeyDown);
+      }
+
+      function onSubmit(e) {
+        e && e.preventDefault();
+        const val = input.value;
+        cleanup();
+        resolve(val);
+      }
+
+      function onCancel(e) {
+        e && e.preventDefault();
+        cleanup();
+        resolve(null);
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Escape') onCancel(e);
+        if (e.key === 'Enter') onSubmit(e);
+      }
+
+      // show modal
+      modal.classList.add('admin-modal-open');
+      modal.setAttribute('aria-hidden', 'false');
+      // focus input after a tick so the element is visible
+      setTimeout(() => input.focus(), 50);
+
+      btnSubmit.addEventListener('click', onSubmit);
+      btnCancel.addEventListener('click', onCancel);
+      btnClose.addEventListener('click', onCancel);
+      modal.addEventListener('keydown', onKeyDown);
+    });
+
+    // If user cancelled modal
+    if (!adminPassword) {
+      console.warn('⚠️ Admin-Passwort-Dialog abgebrochen');
+      return;
+    }
+
+    // Prüfe Passwort (keine Ausgabe des Passworts in der Konsole)
     if (adminPassword !== 'PXL339') {
       alert('❌ Falsches Passwort! Lobby kann nicht erstellt werden.');
       console.error('❌ Falsches Admin-Passwort');

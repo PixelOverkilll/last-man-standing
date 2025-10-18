@@ -169,6 +169,23 @@
     </div>
   </div>
 
+  <!-- Admin Password Modal (hidden, wird von js/app.js geöffnet) -->
+  <div id="admin-modal" class="admin-modal" aria-hidden="true" role="dialog" aria-labelledby="admin-modal-title">
+    <div class="admin-modal-backdrop"></div>
+    <div class="admin-modal-panel" role="document">
+      <button class="admin-modal-close" id="admin-modal-close" aria-label="Schließen">✕</button>
+      <h3 id="admin-modal-title">Admin-Passwort eingeben</h3>
+      <p class="admin-modal-desc">Gib das Admin-Passwort ein, um eine Lobby zu erstellen.</p>
+      <div class="admin-modal-input-wrap">
+        <input id="admin-password-input" class="admin-password-input" type="password" placeholder="Admin-Passwort" aria-label="Admin Passwort">
+      </div>
+      <div class="admin-modal-actions">
+        <button id="admin-modal-cancel" class="btn btn-secondary">Abbrechen</button>
+        <button id="admin-modal-submit" class="btn btn-primary">Bestätigen</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/app.js"></script>
 
 </body>
