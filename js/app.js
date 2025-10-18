@@ -475,10 +475,50 @@ document.addEventListener('DOMContentLoaded', function() {
           btnToggle.classList.remove('is-pressed');
           btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
         }
-        const eyeOn = btnToggle.querySelector('.icon-eye');
-        const eyeOff = btnToggle.querySelector('.icon-eye-off');
-        // Do not touch inline styles; CSS handles which icon is visible based on .is-pressed
-        // (keeps a clean separation between behavior and presentation)
+
+        // Force fallback for now so the user always sees an icon (emoji fallback)
+        btnToggle.classList.add('show-fallback');
+
+        // Fallback detection: if SVGs are not rendering/shown, show emoji fallback
+        const ensureFallbackVisibility = () => {
+          try {
+            const svgs = btnToggle.querySelectorAll('svg');
+            let visibleSvg = false;
+            svgs.forEach(sv => {
+              const cs = window.getComputedStyle(sv);
+              const rect = sv.getBoundingClientRect();
+              console.debug('SVG computed:', {display: cs.display, visibility: cs.visibility, opacity: cs.opacity, rectWidth: rect.width, rectHeight: rect.height});
+              if (cs && cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) !== 0 && rect.width > 0 && rect.height > 0) {
+                visibleSvg = true;
+              }
+            });
+            console.debug('Admin modal: visibleSvg=', visibleSvg);
+            if (!visibleSvg) {
+              btnToggle.classList.add('show-fallback');
+            } else {
+              btnToggle.classList.remove('show-fallback');
+            }
+          } catch (err) {
+            // If anything goes wrong in detection, show fallback as safe default
+            console.error('Error during SVG visibility detection:', err);
+            btnToggle.classList.add('show-fallback');
+          }
+        };
+
+        // Run detection after a paint so computed styles are up-to-date
+        requestAnimationFrame(ensureFallbackVisibility);
+
+        // Re-run detection on window resize (SVG rendering might change)
+        const onResize = () => requestAnimationFrame(ensureFallbackVisibility);
+        window.addEventListener('resize', onResize);
+
+        // Cleanup should remove event listener too
+        const originalCleanup = cleanup;
+        cleanup = function() {
+          window.removeEventListener('resize', onResize);
+          // call original cleanup
+          originalCleanup();
+        };
       }
 
       btnSubmit.addEventListener('click', onSubmit);

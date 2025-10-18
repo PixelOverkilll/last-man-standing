@@ -894,10 +894,10 @@ body.bg-waves::before {
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: rgba(255,255,255,0.02);
-  border: 2px solid rgba(124,58,237,0.22);
+  background: rgba(255,255,255,0.03);
+  border: 2px solid rgba(124,58,237,0.28);
   border-radius: 10px;
-  color: #e9d5ff;
+  color: #ffffff; /* enforce visible icon color */
   cursor: pointer;
   padding: 6px;
   transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
@@ -924,6 +924,25 @@ body.bg-waves::before {
   pointer-events: none;
 }
 
+/* Fallback emoji visibility (used when SVGs aren't rendering) */
+#admin-password-toggle .fallback-eye,
+#admin-password-toggle .fallback-eye-off {
+  display: none;
+  font-size: 18px;
+  line-height: 1;
+  color: currentColor;
+}
+
+/* When fallback mode is active, show appropriate emoji and hide SVGs for clarity */
+#admin-password-toggle.show-fallback svg { display: none !important; }
+#admin-password-toggle.show-fallback .fallback-eye { display: inline-block !important; }
+#admin-password-toggle.show-fallback.is-pressed .fallback-eye { display: none !important; }
+#admin-password-toggle.show-fallback.is-pressed .fallback-eye-off { display: inline-block !important; }
+
+/* Ensure fallback emoji is above other UI inside the button */
+#admin-password-toggle .fallback-eye,
+#admin-password-toggle .fallback-eye-off { position: relative; z-index: 6; }
+
 /* When pressed (password visible) */
 #admin-password-toggle.is-pressed {
   background: rgba(124,58,237,0.09);
@@ -940,8 +959,10 @@ body.bg-waves::before {
 #admin-password-toggle svg {
   width: 20px;
   height: 20px;
-  fill: currentColor;
+  fill: none; /* icons use stroke, ensure no accidental fill */
   stroke: currentColor;
+  stroke-width: 1.6; /* thicker strokes for better visibility */
+  vector-effect: non-scaling-stroke; /* keep stroke thickness when scaled */
   display: block;
 }
 
