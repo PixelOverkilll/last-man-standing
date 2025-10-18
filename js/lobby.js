@@ -781,13 +781,35 @@ function setupEventListeners() {
       overlay.style.backgroundColor = 'rgba(57, 255, 20, 0.3)'; // Dezentes Grün
       overlay.style.zIndex = '1000';
       overlay.style.pointerEvents = 'none';
-      overlay.style.transition = 'opacity 0.5s ease';
+      overlay.style.transition = 'opacity 0.3s ease'; // Geschwindigkeit erhöht
       document.body.appendChild(overlay);
 
       setTimeout(() => {
         overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 500);
-      }, 500);
+        setTimeout(() => overlay.remove(), 300); // Geschwindigkeit angepasst
+      }, 300);
+    });
+  }
+
+  const wrongBtn = document.querySelector('.btn-wrong');
+  if (wrongBtn && isHost) {
+    wrongBtn.addEventListener('click', () => {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.3)'; // Dezentes Rot
+      overlay.style.zIndex = '1000';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.transition = 'opacity 0.3s ease';
+      document.body.appendChild(overlay);
+
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 300);
+      }, 300);
     });
   }
 }
