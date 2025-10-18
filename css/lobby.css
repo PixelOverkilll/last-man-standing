@@ -338,66 +338,54 @@ body.bg-waves {
 
 /* Neue Button-Stile für Richtig/Falsch */
 .btn-correct, .btn-wrong {
-    position: absolute;
-    top: 80px;
-    right: auto;
-    margin-top: 10px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 1.4rem;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.4rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
 
-  /* Positionieren der Buttons nebeneinander */
-  .btn-correct {
-    left: calc(50% - 60px); /* Zentriert und Abstand von 10px zum Falsch-Button */
-  }
+/* Positionieren der Buttons unter Verlassen und Fullscreen */
+.btn-correct {
+  top: 80px;
+  right: 20px;
+  background: #39ff14; /* Neon-Grün */
+  border-color: #32cd12;
+}
 
-  .btn-wrong {
-    left: calc(50% + 10px); /* Zentriert und Abstand von 10px zum Richtig-Button */
-  }
+.btn-correct:hover {
+  background: rgba(34, 197, 94, 1); /* Dunkleres Grün beim Hover */
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(34, 197, 94, 0.7);
+}
 
-  .btn-correct {
-    top: 140px; /* Positioniert den Button unter dem 'X'-Button */
-    right: 20px;
-  }
+.btn-correct:active {
+  transform: scale(1.05);
+}
 
-  .btn-correct {
-    background: #39ff14; /* Neon-Grün */
-    border-color: #32cd12;
-  }
+.btn-wrong {
+  top: 140px;
+  right: 20px;
+  background: rgba(239, 68, 68, 0.85);
+  border-color: #dc2626;
+}
 
-  .btn-correct:hover {
-    background: rgba(34, 197, 94, 1); /* Dunkleres Grün beim Hover */
-    transform: scale(1.15);
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.7);
-  }
+.btn-wrong:hover {
+  background: rgba(239, 68, 68, 1); /* Dunkleres Rot beim Hover */
+  transform: scale(1.15);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.7);
+}
 
-  .btn-correct:active {
-    transform: scale(1.05);
-  }
-
-  .btn-wrong {
-    background: rgba(239, 68, 68, 0.85);
-    border-color: #dc2626;
-  }
-
-  .btn-wrong:hover {
-    background: rgba(239, 68, 68, 1); /* Dunkleres Rot beim Hover */
-    transform: scale(1.15);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.7);
-  }
-
-  .btn-wrong:active {
-    transform: scale(1.05);
-  }
+.btn-wrong:active {
+  transform: scale(1.05);
+}
 
 /* Players Area - VERBESSERT FÜR VOLLBILD */
 .players-area {
