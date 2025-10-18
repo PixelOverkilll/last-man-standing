@@ -145,20 +145,42 @@ body {
   animation: glow-title 2s ease-in-out infinite alternate;
 }
 
-@keyframes glow-title {
-  from {
-    text-shadow:
-      0 0 10px #8b27c4,
-      0 0 20px #8b27c4,
-      0 0 40px #fff,
-      0 0 60px #8b27c4;
+/* Stil für den Untertitel unter dem Haupttitel: thematisch, prägnant und modern */
+.game-subtitle {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: #e9d5ff; /* Fallback-Farbe */
+  background: linear-gradient(90deg, #d6a8ff 0%, #e9d5ff 40%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; /* Gradient-Text, mit Fallback oben */
+  text-shadow: 0 2px 12px rgba(120, 45, 180, 0.18);
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.08) inset, 0 6px 20px rgba(0,0,0,0.35);
+}
+
+/* Dekorativer Trenner unter dem Untertitel */
+.game-subtitle::after {
+  content: '';
+  display: block;
+  margin: 10px auto 0;
+  width: 120px;
+  height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(167,139,250,0.9), rgba(124,58,237,0.9));
+  box-shadow: 0 4px 12px rgba(124,58,237,0.12);
+}
+
+@media (max-width: 600px) {
+  .game-subtitle {
+    font-size: 0.95rem;
+    padding: 4px 8px;
   }
-  to {
-    text-shadow:
-      0 0 20px #fff,
-      0 0 40px #8b27c4,
-      0 0 80px #fff,
-      0 0 120px #8b27c4;
+  .game-subtitle::after {
+    width: 80px;
   }
 }
 
