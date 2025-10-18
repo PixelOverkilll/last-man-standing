@@ -768,6 +768,19 @@ function setupEventListeners() {
 
   const leaveLobbyBtn = document.getElementById('leave-lobby-btn');
   if (leaveLobbyBtn) leaveLobbyBtn.addEventListener('click', leaveLobby);
+
+  const correctBtn = document.querySelector('.btn-correct');
+  if (correctBtn && isHost) {
+    correctBtn.addEventListener('click', () => {
+      const body = document.querySelector('body');
+      body.style.transition = 'background-color 0.5s ease';
+      body.style.backgroundColor = '#39ff14'; // Neon-Grün
+
+      setTimeout(() => {
+        body.style.backgroundColor = ''; // Zurücksetzen auf Standard
+      }, 500);
+    });
+  }
 }
 
 function leaveLobby() {
