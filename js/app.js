@@ -471,6 +471,22 @@ document.addEventListener('DOMContentLoaded', function() {
       // focus input after a tick so the element is visible
       setTimeout(() => input.focus(), 50);
 
+      // Initialize toggle visual state based on aria-pressed (ensures icons match state)
+      if (btnToggle) {
+        const pressed = btnToggle.getAttribute('aria-pressed') === 'true';
+        if (pressed) {
+          btnToggle.classList.add('is-pressed');
+          btnToggle.setAttribute('aria-label', 'Passwort verbergen');
+        } else {
+          btnToggle.classList.remove('is-pressed');
+          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
+        }
+        const eyeOn = btnToggle.querySelector('.icon-eye');
+        const eyeOff = btnToggle.querySelector('.icon-eye-off');
+        if (eyeOn) eyeOn.style.display = pressed ? '' : 'none';
+        if (eyeOff) eyeOff.style.display = pressed ? 'none' : '';
+      }
+
       btnSubmit.addEventListener('click', onSubmit);
       btnCancel.addEventListener('click', onCancel);
       btnClose.addEventListener('click', onCancel);
