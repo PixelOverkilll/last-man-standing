@@ -340,7 +340,7 @@ body.bg-waves {
 .btn-correct, .btn-wrong {
     position: absolute;
     top: 80px;
-    right: 20px;
+    right: auto;
     margin-top: 10px;
     width: 50px;
     height: 50px;
@@ -353,6 +353,15 @@ body.bg-waves {
     align-items: center;
     justify-content: center;
     padding: 0;
+  }
+
+  /* Positionieren der Buttons nebeneinander */
+  .btn-correct {
+    left: calc(50% - 60px); /* Zentriert und Abstand von 10px zum Falsch-Button */
+  }
+
+  .btn-wrong {
+    left: calc(50% + 10px); /* Zentriert und Abstand von 10px zum Richtig-Button */
   }
 
   .btn-correct {
