@@ -173,21 +173,38 @@
   <!-- Dynamically load socket.io client: use CONFIG.getSocketUrl() in production, else local /socket.io/socket.io.js -->
   <script>
     (function() {
-      var socketScript = '/socket.io/socket.io.js';
       try {
+        var socketScript = '/socket.io/socket.io.js';
         if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.ENV === 'production' && typeof CONFIG.getSocketUrl === 'function') {
-          var base = CONFIG.getSocketUrl().replace(/\/$/, '');
-          socketScript = base + '/socket.io/socket.io.js';
+          // Use CDN for the client library in production to avoid cross-site parser-blocking policies.
+          socketScript = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
         }
       } catch (e) {
-        // fall back to default
+        var socketScript = '/socket.io/socket.io.js';
       }
-      // document.write to ensure synchronous, blocking load before socket-client.js
-      document.write('<script src="' + socketScript + '"><\/script>');
+
+      // Create script element and append to head. When loaded, insert socket-client.js synchronously.
+      function loadScript(src, cb) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.async = false; // preserve execution order
+        s.onload = cb || function(){};
+        s.onerror = function(err) { console.error('Failed to load script', src, err); cb && cb(err); };
+        document.head.appendChild(s);
+      }
+
+      // Load socket.io client, then load our socket-client.js
+      loadScript(socketScript, function(err) {
+        if (err) {
+          console.warn('socket.io client failed to load from', socketScript, ' — socket-client may not work');
+        }
+        // Now load the socket-client (ensures io is available before it runs)
+        loadScript('js/socket-client.js');
+      });
     })();
   </script>
-  <!-- Client-side Socket-Connector -->
-  <script src="js/socket-client.js"></script>
+
+  <!-- Note: js/socket-client.js will be loaded dynamically above -->
 
   <script src="js/app.js"></script>
 
