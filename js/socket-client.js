@@ -105,7 +105,14 @@
           socket.emit('create-lobby', { mode: 'default' }, (res) => {
             console.log('[socket-client] create-lobby result', res);
             if (res && res.lobbyId) {
-              smallNotify('Lobby erstellt — Code in Lobbyseite (sichtbar nur für Host)', 'success', 3000);
+              const finalCode = res.lobbyId;
+              try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch (e) { /* ignore */ }
+              smallNotify('Lobby erstellt — Weiterleitung zur Lobby...', 'success', 1600);
+              // small delay so user sees the toast, then navigate
+              setTimeout(() => { window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 600);
+            } else {
+              smallNotify('Erstellen der Lobby fehlgeschlagen', 'error', 2200);
+              console.error('[socket-client] create-lobby failed', res);
             }
           });
         });
@@ -114,11 +121,19 @@
       if (joinBtn) {
         joinBtn.addEventListener('click', () => {
           const code = lobbyInput ? lobbyInput.value.trim() : '';
-          if (!code) return smallNotify('Bitte Lobby-Code eingeben', 'error', 2200);
+          if (!code) {
+            smallNotify('Bitte Lobby-Code eingeben', 'error', 2200);
+            return;
+          }
           socket.emit('join-lobby', { lobbyId: code }, (res) => {
             console.log('[socket-client] join-lobby result', res);
             if (res && res.ok) {
-              smallNotify('Lobby beigetreten', 'success', 2200);
+              try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}
+              smallNotify('Lobby beigetreten — Weiterleitung...', 'success', 1400);
+              setTimeout(() => { window.location.href = 'lobby.html?code=' + encodeURIComponent(code); }, 600);
+            } else {
+              smallNotify('Beitreten der Lobby fehlgeschlagen', 'error', 2200);
+              console.error('[socket-client] join-lobby failed', res);
             }
           });
         });

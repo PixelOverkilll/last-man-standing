@@ -398,7 +398,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       console.log('✅ Host-Lobby bereit. Warte auf Spieler...');
     } else {
       console.log('🔗 Versuche Lobby beizutreten:', lobbyCode);
-      await joinLobby(lobbyCode);
+      // Use retry wrapper to handle short timing races
+      await joinLobbyWithRetry(lobbyCode);
       console.log('✅ Client erfolgreich verbunden');
     }
   } catch (error) {
@@ -407,6 +408,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     setTimeout(() => window.location.href = 'index.html', 3000);
   }
 });
+
+// Retry wrapper for joinLobby to handle short race conditions where host hasn't registered lobby on server yet
+async function joinLobbyWithRetry(code, maxAttempts = 6, delayMs = 800) {
+  let attempt = 0;
+  while (attempt < maxAttempts) {
+    try {
+      attempt++;
+      console.log(`Versuche beizutreten (Versuch ${attempt}/${maxAttempts})`, code);
+      const res = await joinLobby(code);
+      console.log('Beitritt erfolgreich', res);
+      return res;
+    } catch (err) {
+      console.warn('Join-Versuch fehlgeschlagen', err, '— warte und versuche erneut');
+      // If server explicitly says lobby-not-found, we retry. For other errors we can also retry a few times.
+      if (attempt >= maxAttempts) {
+        throw err;
+      }
+      // Backoff with jitter
+      const jitter = Math.floor(Math.random() * 250);
+      await new Promise(r => setTimeout(r, delayMs + jitter));
+    }
+  }
+  throw new Error('joinLobbyWithRetry exhausted');
+}
 
 // ========================================
 // DOM FUNKTIONEN
@@ -627,18 +652,18 @@ function updateLobbyCodeDisplay(code) {
 
   if (!container) return;
 
+  // Make container visible for both hosts and clients; we control internal visibility separately
+  container.classList.add('lobby-code-visible');
+  container.style.display = 'flex';
+
   // Hosts sehen den vollständigen Code und beide Buttons
   if (isHost && code) {
-    container.classList.add('lobby-code-visible');
-    container.style.display = 'flex';
     if (codeDisplay) { codeDisplay.style.visibility = 'visible'; codeDisplay.textContent = code; }
     if (teaser) teaser.style.display = 'none';
     if (copyCodeBtn) copyCodeBtn.style.display = 'inline-block';
     if (copyLinkBtn) copyLinkBtn.style.display = 'inline-block';
   } else {
     // Clients sehen einen Teaser und nur den Link-Kopieren Button (kein direkter Code)
-    container.classList.remove('lobby-code-visible');
-    container.style.display = 'flex';
     if (codeDisplay) { codeDisplay.style.visibility = 'hidden'; codeDisplay.textContent = '------'; }
     if (teaser) teaser.style.display = 'inline-block';
     if (copyCodeBtn) copyCodeBtn.style.display = 'none';
