@@ -386,7 +386,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const btnSubmit = document.getElementById('admin-modal-submit');
       const btnCancel = document.getElementById('admin-modal-cancel');
       const btnClose = document.getElementById('admin-modal-close');
-      const btnToggle = document.getElementById('admin-password-toggle');
 
       function cleanup() {
         // hide modal and remove listeners
@@ -396,49 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSubmit.removeEventListener('click', onSubmit);
         btnCancel.removeEventListener('click', onCancel);
         btnClose.removeEventListener('click', onCancel);
-        if (btnToggle) btnToggle.removeEventListener('click', onToggle);
         modal.removeEventListener('keydown', onKeyDown);
-        // reset toggle state
-        if (btnToggle) {
-          // Set aria attributes and ensure password is hidden
-          btnToggle.setAttribute('aria-pressed', 'false');
-          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
-          btnToggle.classList.remove('is-pressed');
-          input.type = 'password';
-          // If SVG icons are present, ensure the default (hidden) icon state
-          const svgs = btnToggle.querySelectorAll('svg');
-          svgs.forEach(svg => svg.style.display = '');
-        }
-      }
-
-      function onToggle(e) {
-        e && e.preventDefault();
-        const pressed = btnToggle.getAttribute('aria-pressed') === 'true';
-        if (pressed) {
-          // currently visible -> hide
-          input.type = 'password';
-          btnToggle.setAttribute('aria-pressed', 'false');
-          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
-          btnToggle.classList.remove('is-pressed');
-        } else {
-          // currently hidden -> show
-          input.type = 'text';
-          btnToggle.setAttribute('aria-pressed', 'true');
-          btnToggle.setAttribute('aria-label', 'Passwort verbergen');
-          btnToggle.classList.add('is-pressed');
-        }
-
-        // Keep focus on input
-        input.focus();
-
-        // Toggle visibility of any inline SVG children so CSS can animate/switch icons
-        // NOTE: We no longer toggle style.display because CSS uses !important/opacity to control visibility.
-        if (btnToggle) {
-          // only ensure aria/class state is set; CSS handles visibility
-          const eyeOn = btnToggle.querySelector('.icon-eye');
-          const eyeOff = btnToggle.querySelector('.icon-eye-off');
-          // nothing to set on style.display to avoid fighting CSS; leave DOM intact
-        }
       }
 
       function onSubmit(e) {
@@ -465,62 +422,9 @@ document.addEventListener('DOMContentLoaded', function() {
       // focus input after a tick so the element is visible
       setTimeout(() => input.focus(), 50);
 
-      // Initialize toggle visual state based on aria-pressed (ensures icons match state)
-      if (btnToggle) {
-        const pressed = btnToggle.getAttribute('aria-pressed') === 'true';
-        if (pressed) {
-          btnToggle.classList.add('is-pressed');
-          btnToggle.setAttribute('aria-label', 'Passwort verbergen');
-        } else {
-          btnToggle.classList.remove('is-pressed');
-          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
-        }
-
-        // Fallback detection: if SVGs are not rendering/shown, show emoji fallback
-        const ensureFallbackVisibility = () => {
-          try {
-            const svgs = btnToggle.querySelectorAll('svg');
-            let visibleSvg = false;
-            svgs.forEach(sv => {
-              const cs = window.getComputedStyle(sv);
-              const rect = sv.getBoundingClientRect();
-              // determine visibility without logging
-              if (cs && cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) !== 0 && rect.width > 0 && rect.height > 0) {
-                visibleSvg = true;
-              }
-            });
-            if (!visibleSvg) {
-              
-            } else {
-              btnToggle.classList.remove('show-fallback');
-            }
-          } catch (err) {
-            // If anything goes wrong in detection, show fallback as safe default
-            // keep fallback on error but avoid noisy console output in prod
-            
-          }
-        };
-
-        // Run detection after a paint so computed styles are up-to-date
-        requestAnimationFrame(ensureFallbackVisibility);
-
-        // Re-run detection on window resize (SVG rendering might change)
-        const onResize = () => requestAnimationFrame(ensureFallbackVisibility);
-        window.addEventListener('resize', onResize);
-
-        // Cleanup should remove event listener too
-        const originalCleanup = cleanup;
-        cleanup = function() {
-          window.removeEventListener('resize', onResize);
-          // call original cleanup
-          originalCleanup();
-        };
-      }
-
       btnSubmit.addEventListener('click', onSubmit);
       btnCancel.addEventListener('click', onCancel);
       btnClose.addEventListener('click', onCancel);
-      if (btnToggle) btnToggle.addEventListener('click', onToggle);
       modal.addEventListener('keydown', onKeyDown);
     });
 
