@@ -366,8 +366,13 @@ body.bg-waves {
   }
 
   .btn-correct:hover {
-    background: #32cd12;
-    box-shadow: 0 6px 20px rgba(50, 205, 18, 0.7);
+    background: rgba(34, 197, 94, 1); /* Dunkleres Grün beim Hover */
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.7);
+  }
+
+  .btn-correct:active {
+    transform: scale(1.05);
   }
 
   .btn-wrong {
