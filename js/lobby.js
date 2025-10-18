@@ -145,301 +145,172 @@ function applyPlayerColor(playerCard, color) {
 }
 
 // ========================================
-// P2P FUNKTIONEN
+// SOCKET.IO (statt P2P) - Lobby Funktionen
 // ========================================
+let socket = window.__LMS_SOCKET || null;
+let _socketHandlersAttached = false;
+
+function ensureSocket() {
+  if (socket) return socket;
+  socket = io();
+  window.__LMS_SOCKET = socket;
+  attachSocketHandlers();
+  return socket;
+}
+
+function attachSocketHandlers() {
+  if (!socket || _socketHandlersAttached) return;
+  _socketHandlersAttached = true;
+
+  socket.on('connect', () => {
+    console.log('[socket] verbunden mit', socket.id);
+  });
+
+  socket.on('lobby-state', (data) => {
+    console.log('[socket] lobby-state', data);
+    // Setze Host-Info
+    if (data.host) displayHostInfo(data.host);
+    // Füge alle Spieler hinzu
+    if (Array.isArray(data.players)) {
+      players.clear();
+      document.querySelectorAll('[id^="player-"]').forEach(el => el.remove());
+      data.players.forEach(p => {
+        players.set(p.id, p);
+        addPlayerToDOM(p);
+      });
+    }
+  });
+
+  socket.on('player-joined', (payload) => {
+    const p = payload.player;
+    console.log('[socket] player-joined', p);
+    if (!players.has(p.id)) {
+      players.set(p.id, p);
+      addPlayerToDOM(p);
+      showNotification(`✅ ${p.name} ist beigetreten`, 'success', 2000);
+    }
+  });
+
+  socket.on('player-left', (payload) => {
+    const id = payload.playerId;
+    console.log('[socket] player-left', id);
+    if (players.has(id)) {
+      const p = players.get(id);
+      players.delete(id);
+      removePlayerFromDOM(id);
+      showNotification(`❌ ${p.name} hat die Lobby verlassen`, 'info', 2000);
+    }
+  });
+
+  socket.on('lobby-closed', () => {
+    showNotification('ℹ️ Lobby wurde geschlossen', 'info', 2500);
+    setTimeout(() => window.location.href = 'index.html', 1500);
+  });
+
+  socket.on('eval', (data) => {
+    if (!isHost) {
+      const duration = data.duration || 300;
+      const color = data.result === 'correct' ? 'rgba(57, 255, 20, 0.3)' : 'rgba(255, 0, 0, 0.3)';
+      showEvalOverlay(color, duration);
+    }
+  });
+
+  socket.on('score-update', (data) => {
+    console.log('[socket] score-update', data);
+    const p = players.get(data.playerId);
+    if (p) {
+      p.score = data.score;
+      players.set(data.playerId, p);
+      updatePlayerScoreInDOM(data.playerId, data.score);
+    } else {
+      const newP = { id: data.playerId, name: data.name || 'Spieler', avatar: data.avatar || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.playerId), score: data.score };
+      players.set(data.playerId, newP);
+      addPlayerToDOM(newP);
+    }
+  });
+
+  socket.on('game-start', (data) => {
+    showNotification('🎮 Quiz startet!', 'success', 2000);
+    // Weitere Start-Logik kann hier folgen
+  });
+}
 
 // Host erstellt Lobby
 async function createLobby(code) {
-  console.log('🎮 Erstelle P2P-Lobby als Host mit Code:', code);
-
+  ensureSocket();
   return new Promise((resolve, reject) => {
-    // Erstelle Peer mit dem übergebenen Lobby-Code als ID
-    peer = new Peer(code, {
-      debug: 1,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
+    const playerMeta = currentUser ? { id: currentUser.id || socket.id, name: currentUser.global_name || currentUser.username, avatar: getUserAvatar(currentUser), score: 0, isHost: true } : { id: socket.id, name: 'Host', avatar: '', isHost: true };
+
+    socket.emit('create-lobby', { lobbyId: code, player: playerMeta }, (res) => {
+      if (!res || !res.ok) {
+        console.error('Lobby konnte nicht erstellt werden', res);
+        return reject(res);
       }
-    });
 
-    peer.on('open', (id) => {
-      console.log('✅ P2P-Lobby erstellt mit Code:', id);
-      lobbyCode = id;
-
-      // Host wird NICHT als Spieler hinzugefügt, nur als Host-Info gespeichert
-      console.log('👑 Host bereit, warte auf Spieler...');
-
-      resolve(id);
-    });
-
-    peer.on('error', (error) => {
-      console.error('❌ Peer Error:', error);
-      showNotification('❌ Verbindungsfehler: ' + error.type, 'error', 3000);
-      reject(error);
-    });
-
-    // Lausche auf eingehende Verbindungen
-    peer.on('connection', (conn) => {
-      console.log('👥 Eingehende Verbindung von:', conn.peer);
-      handleIncomingConnection(conn);
+      isHost = true;
+      lobbyCode = res.lobbyId || code;
+      players.clear();
+      // Host not included in players list on server by default; add host locally if desired
+      players.set(socket.id, playerMeta);
+      displayHostInfo(playerMeta);
+      localStorage.setItem('lobbyCode', lobbyCode);
+      localStorage.setItem('isHost', 'true');
+      console.log('Lobby erstellt', lobbyCode);
+      resolve(lobbyCode);
     });
   });
 }
 
 // Spieler tritt Lobby bei
 async function joinLobby(code) {
-  console.log('🔗 Verbinde mit Lobby:', code);
-
+  ensureSocket();
   return new Promise((resolve, reject) => {
-    // Erstelle Peer mit zufälliger ID
-    peer = new Peer({
-      debug: 2,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      }
-    });
-
-    peer.on('open', (id) => {
-      console.log('🔗 Peer erstellt mit ID:', id);
-
-      // Verbinde mit Host
-      const conn = peer.connect(code, {
-        reliable: true,
-        metadata: {
-          player: {
-            id: id,
-            name: currentUser.global_name || currentUser.username,
-            avatar: getUserAvatar(currentUser),
-            score: 0,
-            isHost: false
-          }
-        }
-      });
-
-      setupConnection(conn, true);
-      hostConnection = conn;
-
-      conn.on('open', () => {
-        console.log('✅ Verbindung zum Host hergestellt');
-        showNotification('✅ Mit Lobby verbunden!', 'success', 2000);
-        resolve(conn);
-      });
-
-      conn.on('error', (error) => {
-        console.error('❌ Verbindungsfehler:', error);
-        showNotification('❌ Verbindung fehlgeschlagen', 'error', 3000);
-        reject(error);
-      });
-    });
-
-    peer.on('error', (error) => {
-      console.error('❌ Peer Error:', error);
-      showNotification('❌ Lobby nicht gefunden', 'error', 3000);
-      reject(error);
-    });
-  });
-}
-
-// Host: Eingehende Verbindung behandeln
-function handleIncomingConnection(conn) {
-  console.log('👤 Neuer Spieler verbindet sich:', conn.peer);
-
-  setupConnection(conn, false);
-
-  conn.on('open', () => {
-    console.log('✅ Verbindung geöffnet mit:', conn.peer);
-
-    const player = conn.metadata?.player || {
-      id: conn.peer,
-      name: 'Spieler_' + conn.peer.substring(0, 4),
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + conn.peer,
+    const id = (currentUser && currentUser.id) ? currentUser.id : undefined;
+    const playerMeta = {
+      id: id || undefined,
+      name: (currentUser && (currentUser.global_name || currentUser.username)) || ('Spieler_' + Math.random().toString(36).slice(2,6)),
+      avatar: currentUser ? getUserAvatar(currentUser) : ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + Math.random()),
       score: 0,
       isHost: false
     };
 
-    console.log('➕ Füge Spieler hinzu:', player);
-
-    connections.set(player.id, conn);
-    players.set(player.id, player);
-
-    // Spieler zur DOM hinzufügen
-    addPlayerToDOM(player);
-
-    // Sende aktuelle Lobby-Daten an neuen Spieler
-    setTimeout(() => {
-      console.log('📤 Sende Lobby-State an:', player.name);
-      conn.send({
-        type: 'lobby-state',
-        host: {
-          name: currentUser.global_name || currentUser.username,
-          avatar: getUserAvatar(currentUser)
-        },
-        players: Array.from(players.values())
-      });
-    }, 500);
-
-    // Benachrichtige alle anderen über den neuen Spieler
-    broadcast({
-      type: 'player-joined',
-      player: player
-    }, player.id);
-
-    showNotification(`✅ ${player.name} ist beigetreten`, 'success', 2000);
-  });
-}
-
-// Verbindungs-Events einrichten
-function setupConnection(conn, isToHost) {
-  conn.on('data', (data) => {
-    handleMessage(data, conn);
-  });
-
-  conn.on('close', () => {
-    console.log('🔌 Verbindung geschlossen:', conn.peer);
-    handleDisconnect(conn);
-  });
-
-  conn.on('error', (error) => {
-    console.error('❌ Connection Error:', error);
-  });
-}
-
-// Nachricht verarbeiten
-function handleMessage(data, conn) {
-  console.log('\ud83d\udce8 Nachricht empfangen:', data.type);
-
-  switch (data.type) {
-    case 'eval':
-      // Host hat eine Bewertung (richtig/falsch) gesendet -> zeige Overlay an
-      if (!isHost) {
-        const result = data.result || 'correct';
-        if (result === 'correct') {
-          showEvalOverlay('rgba(57, 255, 20, 0.3)', data.duration || 300);
-        } else {
-          showEvalOverlay('rgba(255, 0, 0, 0.3)', data.duration || 300);
-        }
+    socket.emit('join-lobby', { lobbyId: code, player: playerMeta }, (res) => {
+      if (!res || !res.ok) {
+        console.error('Lobby join failed', res);
+        return reject(res);
       }
-      break;
-    case 'lobby-state':
-      // Empfange Lobby-Status vom Host
-      if (!isHost) {
-        const host = data.host;
-        displayHostInfo(host);
 
-        // F\u00fcge alle Spieler hinzu
-        data.players.forEach(player => {
-          if (!players.has(player.id)) {
-            players.set(player.id, player);
-            addPlayerToDOM(player);
-          }
-        });
-      }
-      break;
-
-    case 'player-joined':
-      if (!players.has(data.player.id)) {
-        players.set(data.player.id, data.player);
-        addPlayerToDOM(data.player);
-        showNotification(`\u2705 ${data.player.name} ist beigetreten`, 'success', 2000);
-      }
-      break;
-
-    case 'player-left':
-      if (players.has(data.playerId)) {
-        const player = players.get(data.playerId);
-        removePlayerFromDOM(data.playerId);
-        players.delete(data.playerId);
-        showNotification(`\u274c ${player.name} hat die Lobby verlassen`, 'info', 2000);
-      }
-      break;
-
-    case 'score-update':
-      // Aktualisiere Punktestand, wenn ein Host diesen geaendert hat
-      if (data && data.playerId) {
-        const p = players.get(data.playerId) || null;
-        if (p) {
-          p.score = data.score;
-          players.set(data.playerId, p);
-          updatePlayerScoreInDOM(data.playerId, data.score);
-          showNotification(`\u2705 ${p.name} hat jetzt ${data.score} Punkte`, 'success', 1500);
-        } else {
-          // Falls Spieler noch nicht vorhanden, lege ihn kurz an (sicherheitsfall)
-          const newP = { id: data.playerId, name: data.name || 'Spieler', avatar: data.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.playerId, score: data.score };
-          players.set(data.playerId, newP);
-          addPlayerToDOM(newP);
-          showNotification(`\u2705 ${newP.name} hat jetzt ${data.score} Punkte`, 'success', 1500);
-        }
-      }
-      break;
-
-    case 'game-start':
-      showNotification('\ud83c\udfae Quiz startet!', 'success', 2000);
-      // Hier k\u00f6nnte das Quiz gestartet werden
-      break;
-  }
-}
-
-// Verbindung getrennt
-function handleDisconnect(conn) {
-  if (isHost) {
-    // Host: Entferne Spieler
-    let disconnectedPlayerId = null;
-    connections.forEach((c, id) => {
-      if (c === conn) disconnectedPlayerId = id;
+      isHost = false;
+      lobbyCode = code;
+      localStorage.setItem('lobbyCode', lobbyCode);
+      localStorage.setItem('isHost', 'false');
+      console.log('Erfolgreich der Lobby beigetreten', lobbyCode);
+      resolve(res);
     });
-
-    if (disconnectedPlayerId) {
-      connections.delete(disconnectedPlayerId);
-      const player = players.get(disconnectedPlayerId);
-
-      if (player) {
-        removePlayerFromDOM(disconnectedPlayerId);
-        players.delete(disconnectedPlayerId);
-
-        // Benachrichtige andere Spieler
-        broadcast({
-          type: 'player-left',
-          playerId: disconnectedPlayerId
-        });
-
-        showNotification(`❌ ${player.name} hat die Lobby verlassen`, 'info', 2000);
-      }
-    }
-  } else {
-    // Spieler: Host getrennt
-    showNotification('❌ Verbindung zum Host verloren', 'error', 3000);
-    setTimeout(() => {
-      window.location.href = 'index.html';
-    }, 3000);
-  }
+  });
 }
 
 // Nachricht an alle Spieler senden (Host)
 function broadcast(data, excludeId = null) {
-  if (!isHost) return;
+  if (!isHost) {
+    // Spieler senden Relay-Message zum Server
+    const payload = { lobbyId: lobbyCode, type: data.type || 'lobby-event', data: data };
+    ensureSocket().emit('lobby-message', payload);
+    return;
+  }
 
-  connections.forEach((conn, playerId) => {
-    if (playerId !== excludeId && conn.open) {
-      conn.send(data);
-    }
-  });
+  // Host: sende Nachricht an Server zur Verteilung
+  const payload = { lobbyId: lobbyCode, type: data.type || 'lobby-event', data: data };
+  ensureSocket().emit('lobby-message', payload);
 }
 
 // Nachricht an Host senden (Spieler)
 function sendToHost(data) {
-  if (isHost || !hostConnection) return;
-
-  if (hostConnection.open) {
-    hostConnection.send(data);
-  }
+  const payload = { lobbyId: lobbyCode, type: data.type || 'to-host', data: data, target: 'host' };
+  ensureSocket().emit('lobby-message', payload);
 }
 
-// Lobby-Code generieren
+// Lobby-Code generieren (falls benötigt)
 function generateLobbyCode() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -837,17 +708,22 @@ function showEvalOverlay(bgColor = 'rgba(57, 255, 20, 0.3)', duration = 300) {
 function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
-  // Verbindungen schließen
+  if (socket && lobbyCode) {
+    ensureSocket().emit('leave-lobby', { lobbyId: lobbyCode }, (res) => {
+      // ignore response
+    });
+  }
+
+  // lokale Aufräumarbeiten
   if (isHost) {
-    connections.forEach((conn) => conn.close());
+    connections.forEach((conn) => conn.close && conn.close());
     connections.clear();
-  } else if (hostConnection) {
+  } else if (hostConnection && hostConnection.close) {
     hostConnection.close();
   }
 
-  if (peer) {
-    peer.destroy();
-  }
+  try { if (socket) socket.disconnect(); } catch (e) {}
+  socket = null;
 
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
