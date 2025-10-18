@@ -391,11 +391,46 @@ document.addEventListener('DOMContentLoaded', async function() {
   try {
     if (isHost) {
       // Host verwendet den Code aus der URL
-      await createLobby(lobbyCode);
+      // Guard: ensure we only attempt to create the lobby once per page load
+      if (!window.__LMS_CREATING_LOBBY) {
+        window.__LMS_CREATING_LOBBY = true;
+
+        // Zeige den Lobby-Code sofort, damit der Host ihn sieht (optimistische UI)
+        try { updateLobbyCodeDisplay(lobbyCode); } catch(e){}
+        try { showNotification('🔧 Lobby wird erstellt... (falls erforderlich wird erneut versucht)', 'info', 1800); } catch(e){}
+
+        // Versuche die Lobby sicher zu erstellen mit ein paar Versuchen
+        const createWithRetry = async (code, attempts = 5, delay = 700) => {
+          for (let i = 1; i <= attempts; i++) {
+            try {
+              console.log(`Erstelle Lobby (Versuch ${i}/${attempts}):`, code);
+              await createLobby(code);
+              console.log('Lobby erfolgreich erstellt auf Server:', code);
+              return true;
+            } catch (err) {
+              console.warn('createLobby fehlgeschlagen', err);
+              if (i >= attempts) throw err;
+              await new Promise(r => setTimeout(r, delay + Math.floor(Math.random()*200)));
+            }
+          }
+        };
+
+        try {
+          await createWithRetry(lobbyCode);
+        } catch (err) {
+          console.error('Lobby konnte nicht erstellt werden nach mehreren Versuchen:', err);
+          showNotification('❌ Lobby-Erstellung fehlgeschlagen. Bitte Seite neu laden oder andere Verbindung prüfen.', 'error', 4000);
+          // allow retry by clearing guard so user can try again after reload
+          window.__LMS_CREATING_LOBBY = false;
+          throw err;
+        }
+      } else {
+        console.log('Lobby-Erstellung bereits in Arbeit, überspringe neuen Start');
+      }
       displayHostInfo();
-      // don't show duplicate notification here; createLobby already shows a generic success toast
+      // createLobby already handled above and will show notifications; persist state
       localStorage.setItem('lobbyCode', lobbyCode);
-      console.log('✅ Host-Lobby bereit. Warte auf Spieler...');
+      console.log('✅ Host-Lobby bereit (oder Erstellversuch läuft). Warte auf Spieler...');
     } else {
       console.log('🔗 Versuche Lobby beizutreten:', lobbyCode);
       // Use retry wrapper to handle short timing races

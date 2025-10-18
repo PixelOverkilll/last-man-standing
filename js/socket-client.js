@@ -102,19 +102,20 @@
 
       if (createBtn) {
         createBtn.addEventListener('click', () => {
-          socket.emit('create-lobby', { mode: 'default' }, (res) => {
-            console.log('[socket-client] create-lobby result', res);
-            if (res && res.lobbyId) {
-              const finalCode = res.lobbyId;
-              try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch (e) { /* ignore */ }
-              smallNotify('Lobby erstellt — Weiterleitung zur Lobby...', 'success', 1600);
-              // small delay so user sees the toast, then navigate
-              setTimeout(() => { window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 600);
-            } else {
-              smallNotify('Erstellen der Lobby fehlgeschlagen', 'error', 2200);
-              console.error('[socket-client] create-lobby failed', res);
-            }
-          });
+          // Vermeide, die Lobby an die Start-Page-Socket zu binden (diese wird beim Navigieren getrennt).
+          // Stattdessen generieren wir client-seitig einen Code, markieren uns als Host und
+          // leiten zur Lobby-Seite weiter. `js/lobby.js` übernimmt dort das eigentliche createLobby.
+          function generateLobbyCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+            return code;
+          }
+
+          const finalCode = generateLobbyCode();
+          try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch (e) { /* ignore */ }
+          smallNotify('Lobby wird erstellt — Weiterleitung zur Lobby...', 'success', 1200);
+          setTimeout(() => { window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 500);
         });
       }
 
