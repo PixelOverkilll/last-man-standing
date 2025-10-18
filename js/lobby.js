@@ -772,12 +772,21 @@ function setupEventListeners() {
   const correctBtn = document.querySelector('.btn-correct');
   if (correctBtn && isHost) {
     correctBtn.addEventListener('click', () => {
-      const body = document.querySelector('body');
-      body.style.transition = 'background-color 0.5s ease';
-      body.style.backgroundColor = '#39ff14'; // Neon-Grün
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(57, 255, 20, 0.3)'; // Dezentes Grün
+      overlay.style.zIndex = '1000';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.transition = 'opacity 0.5s ease';
+      document.body.appendChild(overlay);
 
       setTimeout(() => {
-        body.style.backgroundColor = ''; // Zurücksetzen auf Standard
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 500);
       }, 500);
     });
   }
