@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const finalCode = res.lobbyId || localLobbyCode;
             try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch(e){}
             lobbyCodeInput.value = finalCode;
-            window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode);
+            setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 150);
           } else {
             alert('Erstellen der Lobby fehlgeschlagen: ' + (res && res.error ? res.error : 'Unbekannter Fehler'));
             console.error('[app] create-lobby failed', res);
@@ -412,12 +412,12 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (err) {
         console.error('[app] Fehler beim Senden von create-lobby über Socket:', err);
         try { localStorage.setItem('lobbyCode', localLobbyCode); localStorage.setItem('isHost', 'true'); } catch(e){}
-        window.location.href = 'lobby.html?code=' + encodeURIComponent(localLobbyCode);
+        setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(localLobbyCode); }, 150);
       }
     } else {
       console.warn('[app] kein Socket verfügbar, verwende Fallback für Lobby-Erstellung');
       try { localStorage.setItem('lobbyCode', localLobbyCode); localStorage.setItem('isHost', 'true'); } catch(e){}
-      window.location.href = 'lobby.html?code=' + encodeURIComponent(localLobbyCode);
+      setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(localLobbyCode); }, 150);
     }
   });
 
@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log('[app] join-lobby ack', res);
           if (res && res.ok) {
             try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}
-            window.location.href = 'lobby.html?code=' + encodeURIComponent(code);
+            setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(code); }, 150);
           } else {
             alert('Beitreten der Lobby fehlgeschlagen: ' + (res && res.error ? res.error : 'Lobby nicht gefunden oder geschlossen'));
             console.error('[app] join-lobby failed', res);
@@ -451,12 +451,12 @@ document.addEventListener('DOMContentLoaded', function() {
       } catch (err) {
         console.error('[app] Fehler beim Senden von join-lobby über Socket:', err);
         try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}
-        window.location.href = 'lobby.html?code=' + encodeURIComponent(code);
+        setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(code); }, 150);
       }
     } else {
       console.warn('[app] kein Socket verfügbar, verwende Fallback für Lobby-Beitritt');
       try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}
-      window.location.href = 'lobby.html?code=' + encodeURIComponent(code);
+      setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(code); }, 150);
     }
   });
 // Generate random lobby code
