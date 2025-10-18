@@ -39,7 +39,7 @@ const CONFIG = {
     BASE_URL: {
       development: 'http://localhost:3000',
       // NOTE: this will be patched at runtime when a tunnel is created; default production value is placeholder
-      production: 'https://brown-walls-push.loca.lt'
+      production: 'https://last-man-standing-1.onrender.com'
     }
   },
 
