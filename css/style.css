@@ -715,9 +715,10 @@ body.bg-waves::before {
 }
 
 .game-features-container .feature {
-  max-width: 220px; /* Maximale Breite für kompaktere Darstellung */
-  height: auto; /* Automatische Höhe basierend auf Inhalt */
-  padding: 15px; /* Reduzierte Polsterung für kompakteres Design */
+  width: 180px; /* Kleinere Breite für kompaktere Boxen */
+  height: 150px; /* Kleinere Höhe für kompaktere Boxen */
+  padding: 10px; /* Reduzierte Polsterung für kleinere Boxen */
+  max-width: 100%; /* Maximale Breite auf 100% setzen */
   background-color: #3a3a3a;
   border-radius: 10px;
   text-align: center;
@@ -732,8 +733,8 @@ body.bg-waves::before {
 }
 
 .game-features-container .feature .card-icon {
-  font-size: 2rem; /* Kleinere Emoji-Größe für bessere Proportionen */
-  margin-bottom: 8px; /* Weniger Abstand unter dem Emoji */
+  font-size: 1.8rem; /* Kleinere Emoji-Größe für bessere Proportionen */
+  margin-bottom: 5px; /* Weniger Abstand unter dem Emoji */
   transition: transform 0.3s ease, color 0.3s ease;
 }
 
