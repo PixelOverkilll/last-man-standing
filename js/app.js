@@ -432,18 +432,12 @@ document.addEventListener('DOMContentLoaded', function() {
         input.focus();
 
         // Toggle visibility of any inline SVG children so CSS can animate/switch icons
+        // NOTE: We no longer toggle style.display because CSS uses !important/opacity to control visibility.
         if (btnToggle) {
+          // only ensure aria/class state is set; CSS handles visibility
           const eyeOn = btnToggle.querySelector('.icon-eye');
           const eyeOff = btnToggle.querySelector('.icon-eye-off');
-          if (eyeOn || eyeOff) {
-            if (btnToggle.getAttribute('aria-pressed') === 'true') {
-              if (eyeOn) eyeOn.style.display = '';
-              if (eyeOff) eyeOff.style.display = 'none';
-            } else {
-              if (eyeOn) eyeOn.style.display = 'none';
-              if (eyeOff) eyeOff.style.display = '';
-            }
-          }
+          // nothing to set on style.display to avoid fighting CSS; leave DOM intact
         }
       }
 
@@ -483,8 +477,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         const eyeOn = btnToggle.querySelector('.icon-eye');
         const eyeOff = btnToggle.querySelector('.icon-eye-off');
-        if (eyeOn) eyeOn.style.display = pressed ? '' : 'none';
-        if (eyeOff) eyeOff.style.display = pressed ? 'none' : '';
+        // Do not touch inline styles; CSS handles which icon is visible based on .is-pressed
+        // (keeps a clean separation between behavior and presentation)
       }
 
       btnSubmit.addEventListener('click', onSubmit);

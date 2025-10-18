@@ -894,13 +894,15 @@ body.bg-waves::before {
   justify-content: center;
   width: 44px;
   height: 44px;
-  background: transparent;
-  border: 2px solid rgba(124,58,237,0.18);
+  background: rgba(255,255,255,0.02);
+  border: 2px solid rgba(124,58,237,0.22);
   border-radius: 10px;
   color: #e9d5ff;
   cursor: pointer;
   padding: 6px;
   transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+  z-index: 5; /* above input */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.35);
 }
 
 #admin-password-toggle:focus {
@@ -908,16 +910,18 @@ body.bg-waves::before {
   box-shadow: 0 0 0 5px rgba(124,58,237,0.12);
 }
 
-/* Default: show "eye-off" (hidden) icon, hide "eye" */
+/* Default: show "eye" (password hidden) icon, hide "eye-off" */
 #admin-password-toggle .icon-eye {
-  display: none;
+  display: inline-block;
   width: 20px;
   height: 20px;
 }
 #admin-password-toggle .icon-eye-off {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
+  display: inline-block !important;
+  width: 20px !important;
+  height: 20px !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* When pressed (password visible) */
@@ -927,17 +931,17 @@ body.bg-waves::before {
   transform: translateY(-1px);
 }
 #admin-password-toggle.is-pressed .icon-eye {
-  display: inline-block;
+  opacity: 0;
 }
 #admin-password-toggle.is-pressed .icon-eye-off {
-  display: none;
+  opacity: 1;
 }
 
-/* Ensure SVGs inherit color and are sized consistently */
 #admin-password-toggle svg {
   width: 20px;
   height: 20px;
   fill: currentColor;
+  stroke: currentColor;
   display: block;
 }
 
