@@ -170,7 +170,22 @@
   </div>
 
   <!-- Socket.IO client (served by server) -->
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Dynamically load socket.io client: use CONFIG.getSocketUrl() in production, else local /socket.io/socket.io.js -->
+  <script>
+    (function() {
+      var socketScript = '/socket.io/socket.io.js';
+      try {
+        if (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.ENV === 'production' && typeof CONFIG.getSocketUrl === 'function') {
+          var base = CONFIG.getSocketUrl().replace(/\/$/, '');
+          socketScript = base + '/socket.io/socket.io.js';
+        }
+      } catch (e) {
+        // fall back to default
+      }
+      // document.write to ensure synchronous, blocking load before socket-client.js
+      document.write('<script src="' + socketScript + '"><\/script>');
+    })();
+  </script>
   <!-- Client-side Socket-Connector -->
   <script src="js/socket-client.js"></script>
 
