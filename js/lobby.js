@@ -743,6 +743,7 @@ function initUI() {
   const lobbyCodeDisplay = document.getElementById('lobby-code-display');
   const lobbyCodeContainer = document.getElementById('lobby-code-container');
   const hostControls = document.getElementById('host-controls');
+  const hostEvalButtons = document.getElementById('host-eval-buttons');
 
   if (lobbyCodeDisplay) {
     lobbyCodeDisplay.textContent = lobbyCode;
@@ -751,9 +752,17 @@ function initUI() {
   if (isHost) {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
     if (hostControls) hostControls.style.display = 'block';
+    if (hostEvalButtons) {
+      hostEvalButtons.style.display = 'flex';
+      hostEvalButtons.setAttribute('aria-hidden', 'false');
+    }
   } else {
     if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'none';
     if (hostControls) hostControls.style.display = 'none';
+    if (hostEvalButtons) {
+      hostEvalButtons.style.display = 'none';
+      hostEvalButtons.setAttribute('aria-hidden', 'true');
+    }
   }
 }
 
