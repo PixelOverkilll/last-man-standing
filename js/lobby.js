@@ -68,7 +68,8 @@ function extractDominantColor(imageUrl, callback) {
   };
 
   img.onerror = function() {
-    callback('#7c3aed');
+    // Fallback-Farbe auf grün ändern
+    callback('#10B981');
   };
 
   img.src = imageUrl;
@@ -603,14 +604,31 @@ function handleGivePoints(playerId) {
 }
 
 function selectPlayerForPoints(playerId) {
-  // Entferne alte Markierung
+  // Entferne alte Markierung UND stelle deren Inline-Farben wieder her
   document.querySelectorAll('.player-card.selected-player').forEach(card => {
     card.classList.remove('selected-player');
+    // entferne Inline-Stile vollständig
+    card.style.removeProperty('border-color');
+    const av = card.querySelector('.player-avatar');
+    if (av) {
+      av.style.removeProperty('border-color');
+      av.style.removeProperty('box-shadow');
+    }
   });
+
   selectedPlayerId = playerId;
   const card = document.getElementById('player-' + playerId);
   if (card) {
     card.classList.add('selected-player');
+    // Setze Inline-Randfarbe auf Grün (überschreibt frühere Inline-Lila-Farben)
+    const green = '#10B981';
+    // benutze setProperty mit 'important' damit Styles mit !important überschrieben werden
+    card.style.setProperty('border-color', green, 'important');
+    const avatarEl = card.querySelector('.player-avatar');
+    if (avatarEl) {
+      avatarEl.style.setProperty('border-color', green, 'important');
+      avatarEl.style.setProperty('box-shadow', `0 0 25px ${green}`, 'important');
+    }
   }
   // Avatar-Farbe berechnen und an Sidebar übergeben
   const player = players.get(playerId);
@@ -654,7 +672,8 @@ function showPointsSidebar(primaryColor) {
   if (primaryColor) {
     sidebar.style.border = `4px solid ${primaryColor}`;
     sidebar.style.boxShadow = `-8px 0 32px ${primaryColor}33`;
-    sidebar.style.background = 'linear-gradient(135deg, #2d0a4b 80%, #7c3aed 100%)';
+    // Nutze grünen Verlauf anstelle von lila Fallback
+    sidebar.style.background = 'linear-gradient(135deg, #08332b 80%, #10B981 100%)';
     sidebar.style.transition = 'border 0.2s, box-shadow 0.2s, background 0.2s';
     // Buttons: Umrandung beim Hover
     sidebar.querySelectorAll('.points-btn').forEach(btn => {
@@ -667,13 +686,13 @@ function showPointsSidebar(primaryColor) {
         btn.style.boxShadow = 'none';
       };
       btn.style.borderColor = 'rgba(255,255,255,0.12)';
-      btn.style.background = 'linear-gradient(135deg, #8b27c4 60%, #7c3aed 100%)';
+      btn.style.background = 'linear-gradient(135deg, #059669 60%, #10B981 100%)';
       btn.style.color = '#fff';
     });
   } else {
-    sidebar.style.border = '4px solid #7c3aed';
-    sidebar.style.boxShadow = '-8px 0 32px #7c3aed33';
-    sidebar.style.background = 'linear-gradient(135deg, #2d0a4b 80%, #7c3aed 100%)';
+    sidebar.style.border = '4px solid #10B981';
+    sidebar.style.boxShadow = '-8px 0 32px #10B98133';
+    sidebar.style.background = 'linear-gradient(135deg, #08332b 80%, #10B981 100%)';
   }
   sidebar.style.display = 'block';
 }
@@ -681,9 +700,25 @@ function showPointsSidebar(primaryColor) {
 function hidePointsSidebar() {
   const sidebar = document.getElementById('points-sidebar');
   if (sidebar) sidebar.style.display = 'none';
-  // Markierung entfernen
+  // Markierung entfernen und Inline-Farben wiederherstellen
   document.querySelectorAll('.player-card.selected-player').forEach(card => {
     card.classList.remove('selected-player');
+    const orig = card.style.getPropertyValue('--avatar-color');
+    if (orig) {
+      card.style.borderColor = orig;
+      const av = card.querySelector('.player-avatar');
+      if (av) {
+        av.style.borderColor = orig;
+        av.style.boxShadow = `0 0 25px ${orig}`;
+      }
+    } else {
+      card.style.borderColor = '';
+      const av = card.querySelector('.player-avatar');
+      if (av) {
+        av.style.borderColor = '';
+        av.style.boxShadow = '';
+      }
+    }
   });
   selectedPlayerId = null;
 }

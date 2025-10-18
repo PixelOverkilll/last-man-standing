@@ -26,8 +26,8 @@
 }
 
 :root {
-  --user-theme-color: #7c3aed;
-  --user-theme-rgb: 124, 58, 237;
+  --user-theme-color: #10B981; /* Standard-Theme auf Grün ändern */
+  --user-theme-rgb: 16, 185, 129;
 }
 
 html {
@@ -705,3 +705,49 @@ body.bg-waves::before {
   box-shadow: 0 0 0 2px #8b27c4;
   background: linear-gradient(135deg, #7c3aed 80%, #8b27c4 100%);
 }
+
+/* ...existing code... */
+
+.player-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+  animation: glow-pulse 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.player-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 50px rgba(16,185,129,0.6) !important;
+}
+
+.player-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 5px solid #333; /* neutraler Default, Avatar-Farbe wird per JS gesetzt */
+  box-shadow: 0 0 25px rgba(0,0,0,0.2);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+/* Stelle sicher, dass die ausgewählte Karte alle lila-Glows überschreibt */
+.player-card.selected-player {
+  border-color: #10B981 !important;
+  box-shadow: 0 0 0 4px rgba(16,185,129,0.22), 0 15px 40px rgba(4, 74, 40, 0.18) !important;
+}
+
+.player-card.selected-player::before {
+  background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%) !important;
+}
+
+.player-card.selected-player .player-avatar {
+  border-color: #10B981 !important;
+  box-shadow: 0 0 25px #10B981 !important;
+}
+
