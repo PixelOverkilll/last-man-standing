@@ -167,7 +167,7 @@ body {
   content: '';
   display: block;
   margin: 10px auto 0;
-  width: 120px;
+  width: 220px; /* länger für besseren visuellen Effekt */
   height: 3px;
   border-radius: 4px;
   background: linear-gradient(90deg, rgba(167,139,250,0.9), rgba(124,58,237,0.9));
@@ -180,7 +180,7 @@ body {
     padding: 4px 8px;
   }
   .game-subtitle::after {
-    width: 80px;
+    width: 140px; /* mobil größer als vorher */
   }
 }
 
@@ -743,7 +743,7 @@ body.bg-waves::before {
   border: 2px solid #fff;
   border-radius: 8px;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(44,0,80,0.12);
+  box-shadow: 0 2px 8px rgba(44, 0, 80, 0.12);
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .points-btn-list .points-btn:hover {
