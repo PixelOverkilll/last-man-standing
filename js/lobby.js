@@ -49,13 +49,13 @@ function extractDominantColor(imageUrl, callback) {
     const hsl = rgbToHsl(r, g, b);
 
     let targetHue = hsl[0];
-    const purpleHue = 0.75;
+    const greenHue = 0.33; // 120° in 0-1 Skala (Grün)
 
-    let hueDiff = Math.abs(targetHue - purpleHue);
+    let hueDiff = Math.abs(targetHue - greenHue);
     if (hueDiff > 0.5) hueDiff = 1 - hueDiff;
 
     if (hueDiff > 0.15) {
-      targetHue = purpleHue * 0.7 + targetHue * 0.3;
+      targetHue = greenHue * 0.7 + targetHue * 0.3;
     }
 
     hsl[1] = Math.min(hsl[1] * 1.8, 0.9);
