@@ -381,8 +381,13 @@ body.bg-waves {
   }
 
   .btn-wrong:hover {
-    background: rgba(239, 68, 68, 1);
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.7);
+    background: rgba(239, 68, 68, 1); /* Dunkleres Rot beim Hover */
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.7);
+  }
+
+  .btn-wrong:active {
+    transform: scale(1.05);
   }
 
 /* Players Area - VERBESSERT FÜR VOLLBILD */
