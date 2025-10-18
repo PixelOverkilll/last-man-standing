@@ -314,6 +314,17 @@ function handleMessage(data, conn) {
   console.log('\ud83d\udce8 Nachricht empfangen:', data.type);
 
   switch (data.type) {
+    case 'eval':
+      // Host hat eine Bewertung (richtig/falsch) gesendet -> zeige Overlay an
+      if (!isHost) {
+        const result = data.result || 'correct';
+        if (result === 'correct') {
+          showEvalOverlay('rgba(57, 255, 20, 0.3)', data.duration || 300);
+        } else {
+          showEvalOverlay('rgba(255, 0, 0, 0.3)', data.duration || 300);
+        }
+      }
+      break;
     case 'lobby-state':
       // Empfange Lobby-Status vom Host
       if (!isHost) {
@@ -781,45 +792,45 @@ function setupEventListeners() {
   const correctBtn = document.querySelector('.btn-correct');
   if (correctBtn && isHost) {
     correctBtn.addEventListener('click', () => {
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(57, 255, 20, 0.3)'; // Dezentes Grün
-      overlay.style.zIndex = '1000';
-      overlay.style.pointerEvents = 'none';
-      overlay.style.transition = 'opacity 0.3s ease'; // Geschwindigkeit erhöht
-      document.body.appendChild(overlay);
-
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 300); // Geschwindigkeit angepasst
-      }, 300);
+      // Zeige lokal Overlay
+      showEvalOverlay('rgba(57, 255, 20, 0.3)', 300);
+      // Broadcast an alle Clients
+      broadcast({ type: 'eval', result: 'correct', timestamp: Date.now(), duration: 300 });
     });
   }
 
   const wrongBtn = document.querySelector('.btn-wrong');
   if (wrongBtn && isHost) {
     wrongBtn.addEventListener('click', () => {
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(255, 0, 0, 0.3)'; // Dezentes Rot
-      overlay.style.zIndex = '1000';
-      overlay.style.pointerEvents = 'none';
-      overlay.style.transition = 'opacity 0.3s ease';
-      document.body.appendChild(overlay);
-
-      setTimeout(() => {
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 300);
-      }, 300);
+      // Zeige lokal Overlay
+      showEvalOverlay('rgba(255, 0, 0, 0.3)', 300);
+      // Broadcast an alle Clients
+      broadcast({ type: 'eval', result: 'wrong', timestamp: Date.now(), duration: 300 });
     });
+  }
+}
+
+// Helper: zeige eval-Overlay (wiederverwendet für Host & Clients)
+function showEvalOverlay(bgColor = 'rgba(57, 255, 20, 0.3)', duration = 300) {
+  try {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.backgroundColor = bgColor;
+    overlay.style.zIndex = '1000';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.transition = 'opacity 0.3s ease';
+    document.body.appendChild(overlay);
+
+    setTimeout(() => {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 300);
+    }, duration);
+  } catch (e) {
+    console.error('Fehler beim Anzeigen des Eval-Overlays:', e);
   }
 }
 
