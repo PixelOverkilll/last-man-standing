@@ -509,6 +509,30 @@ body.bg-waves::before {
   min-height: 320px; /* Mindesthöhe für gleichmäßige Größe */
 }
 
+/* Force-Override für option-card.feature innerhalb der Feature-Section - zwingt kompakte Maße */
+.game-features-container .option-card.feature {
+  min-height: 0 !important; /* zwingend entfernen */
+  height: 90px !important; /* kompakte Höhe */
+  width: 200px !important; /* kompakte Breite */
+  padding: 8px 10px !important;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.game-features-container .option-card.feature .card-icon {
+  font-size: 1.9rem !important; /* etwas kleiner */
+}
+
+.game-features-container .option-card.feature .option-title {
+  font-size: 0.95rem !important;
+  text-align: left !important;
+  margin: 0 !important;
+}
+
 /* Card Icon Styling */
 .card-icon {
   font-size: 3.5rem;
@@ -710,53 +734,54 @@ body.bg-waves::before {
 .game-features-container {
   display: flex;
   justify-content: center;
-  gap: 14px; /* etwas engerer Abstand */
+  gap: 12px; /* engerer Abstand */
   margin-top: 20px;
   flex-wrap: wrap; /* erlaubt Umbruch auf kleinen Bildschirmen */
 }
 
 .game-features-container .feature {
-  width: 220px; /* etwas kompakter als vorher (260px) */
-  height: 100px; /* flacheres Aussehen */
-  padding: 10px 12px; /* kompakteres Padding */
+  width: 200px; /* kompakter */
+  height: 90px; /* flacher */
+  min-height: 0; /* WICHTIG: überschreibt .option-card { min-height: 320px } */
+  padding: 8px 10px; /* kompakteres Padding */
   max-width: 100%;
   background-color: #3a3a3a;
   border-radius: 10px;
   text-align: center;
   color: #fff;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
-  transition: transform 0.16s, box-shadow 0.16s;
+  transition: transform 0.12s, box-shadow 0.12s;
 
   /* Flexbox für vertikale Zentrierung von Icon + Titel */
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .game-features-container .feature:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.14);
 }
 
-/* Icon in den Feature-Boxen etwas kleiner für kompakteres Layout */
+/* Icon in den Feature-Boxen kleiner für kompakteres Layout */
 .game-features-container .feature .card-icon {
-  font-size: 2.2rem; /* verkleinert von 2.4rem */
+  font-size: 2rem; /* kompakter */
   margin-bottom: 0;
-  transition: transform 0.28s ease, color 0.28s ease;
+  transition: transform 0.22s ease, color 0.22s ease;
 }
 
 .game-features-container .feature:hover .card-icon {
-  transform: scale(1.15);
+  transform: scale(1.12);
   color: #ffcc00;
 }
 
-/* Titel leicht kompakter halten */
+/* Titel kompakter halten */
 .game-features-container .feature .option-title {
-  font-size: 1rem; /* leicht reduziert */
+  font-size: 0.95rem; /* reduziert */
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.05;
   margin: 0;
   text-align: left; /* steht neben dem Icon */
 }
@@ -764,18 +789,19 @@ body.bg-waves::before {
 /* Responsives Verhalten: auf sehr kleinen Bildschirmen stückeln die Boxen */
 @media (max-width: 600px) {
   .game-features-container {
-    gap: 10px;
+    gap: 8px;
   }
   .game-features-container .feature {
-    width: calc(50% - 10px);
+    width: calc(50% - 8px);
     height: auto; /* flexible Höhe, damit Inhalt nicht abgeschnitten wird */
-    padding: 8px;
+    min-height: 0;
+    padding: 6px;
     flex-direction: column; /* Icon über Titel auf kleinen Bildschirmen */
     text-align: center;
   }
   .game-features-container .feature .option-title {
     text-align: center;
     margin-top: 6px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 }
