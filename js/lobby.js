@@ -148,9 +148,62 @@ function applyPlayerColor(playerCard, color) {
 // P2P FUNKTIONEN
 // ========================================
 
+// Neue Hilfsfunktion: räumt vorhandene Peer-Instanzen und Verbindungen sauber auf
+function cleanupPeer() {
+  try {
+    console.log('🧹 Aufräumen: vorhandene Peer/Verbindungen schließen (falls vorhanden)');
+
+    // Schließe Verbindungsobjekt zum Host
+    if (hostConnection) {
+      try {
+        if (hostConnection.open) hostConnection.close();
+      } catch (e) {
+        console.warn('Warnung beim Schließen von hostConnection:', e);
+      }
+      hostConnection = null;
+    }
+
+    // Schließe alle Client-Verbindungen
+    if (connections && connections.size) {
+      connections.forEach((c) => {
+        try {
+          if (c && c.open) c.close();
+        } catch (e) {
+          console.warn('Warnung beim Schließen einer Verbindung:', e);
+        }
+      });
+      connections.clear();
+    }
+
+    // Zerstöre/Trenne den Peer selbst
+    if (peer) {
+      try {
+        // Entferne alle Event-Listener, wenn unterstützt
+        if (typeof peer.removeAllListeners === 'function') {
+          try { peer.removeAllListeners(); } catch (e) { /* ignore */ }
+        }
+
+        // Versuche zuerst eine saubere Trennung
+        try { if (typeof peer.disconnect === 'function') peer.disconnect(); } catch (e) { /* ignore */ }
+
+        // Zwinge Zerstörung
+        try { if (typeof peer.destroy === 'function') peer.destroy(); } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('Warnung beim Zerstören des Peers:', e);
+      }
+      peer = null;
+    }
+  } catch (e) {
+    console.error('Fehler beim Aufräumen von Peer/Verbindungen:', e);
+  }
+}
+
 // Host erstellt Lobby
 async function createLobby(code) {
   console.log('🎮 Erstelle P2P-Lobby als Host mit Code:', code);
+
+  // Stelle sicher, dass alte Peer/Verbindungen geschlossen sind
+  cleanupPeer();
 
   return new Promise((resolve, reject) => {
     // Erstelle Peer mit dem übergebenen Lobby-Code als ID
@@ -191,6 +244,9 @@ async function createLobby(code) {
 // Spieler tritt Lobby bei
 async function joinLobby(code) {
   console.log('🔗 Verbinde mit Lobby:', code);
+
+  // Stelle sicher, dass alte Peer/Verbindungen geschlossen sind
+  cleanupPeer();
 
   return new Promise((resolve, reject) => {
     // Erstelle Peer mit zufälliger ID
@@ -838,16 +894,8 @@ function leaveLobby() {
   if (!confirm('Lobby wirklich verlassen?')) return;
 
   // Verbindungen schließen
-  if (isHost) {
-    connections.forEach((conn) => conn.close());
-    connections.clear();
-  } else if (hostConnection) {
-    hostConnection.close();
-  }
-
-  if (peer) {
-    peer.destroy();
-  }
+  // Nutze cleanupPeer() das alle Verbindungen und den Peer selbst sauber aufräumt
+  cleanupPeer();
 
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
@@ -856,70 +904,18 @@ function leaveLobby() {
   setTimeout(() => window.location.href = 'index.html', 500);
 }
 
-function startQuiz() {
-  if (players.size < 1) {
-    showNotification('⚠️ Mindestens 1 Spieler benötigt', 'error', 2000);
-    return;
+// Stelle sicher, dass beim Schließen/Neuladen der Seite die Peer-Verbindungen geschlossen werden
+window.addEventListener('beforeunload', function() {
+  try {
+    cleanupPeer();
+  } catch (e) {
+    console.warn('Fehler beim Aufräumen vor dem Verlassen der Seite:', e);
   }
+});
 
-  showNotification('🎮 Quiz startet!', 'success', 2000);
-
-  // Sende Start-Signal an alle Spieler
-  broadcast({
-    type: 'game-start',
-    timestamp: Date.now()
-  });
-
-  console.log('🎮 Quiz gestartet mit', players.size, 'Spielern');
-}
-
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.error('Fullscreen fehlgeschlagen:', err);
-    });
-  } else {
-    document.exitFullscreen();
-  }
-}
-
-function showNotification(message, type = 'info', duration = 2000) {
-  const notification = document.createElement('div');
-  notification.textContent = message;
-
-  const colors = {
-    success: 'rgba(16, 185, 129, 0.95)',
-    error: 'rgba(239, 68, 68, 0.95)',
-    info: 'rgba(124, 58, 237, 0.95)'
-  };
-
-  notification.style.cssText = `
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: ${colors[type]};
-    color: white;
-    padding: 12px 20px;
-    border-radius: 10px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-    z-index: 200;
-    font-weight: 600;
-    font-size: 0.9rem;
-    animation: slideIn 0.2s ease-out;
-    max-width: 250px;
-  `;
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateX(400px)';
-    notification.style.transition = 'all 0.2s ease-out';
-    setTimeout(() => notification.remove(), 200);
-  }, duration);
-}
-
+// ========================================
 // CSS Animation
+// ========================================
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
