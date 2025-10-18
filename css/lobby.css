@@ -354,8 +354,8 @@ body.bg-waves {
 
 /* Positionieren der Buttons unter Verlassen und Fullscreen */
 .btn-correct {
-  top: 80px;
-  right: 20px;
+  top: 80px; /* Gleiche Höhe wie der Falsch-Button */
+  right: 80px; /* Rechts neben dem Falsch-Button */
   background: #39ff14; /* Neon-Grün */
   border-color: #32cd12;
 }
@@ -372,7 +372,7 @@ body.bg-waves {
 
 .btn-wrong {
   top: 80px; /* Gleiche Höhe wie der Richtig-Button */
-  right: 80px; /* Rechts neben dem Richtig-Button */
+  right: 20px; /* Links neben dem Richtig-Button */
   background: rgba(239, 68, 68, 0.85);
   border-color: #dc2626;
 }
