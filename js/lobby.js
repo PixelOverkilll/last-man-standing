@@ -250,9 +250,10 @@ async function createLobby(code) {
       isHost = true;
       lobbyCode = res.lobbyId || code;
       players.clear();
-      // Host not included in players list on server by default; add host locally if desired
+      // Host not included in players list on server by default; add host locally
       players.set(socket.id, playerMeta);
-      displayHostInfo(playerMeta);
+      try { displayHostInfo(playerMeta); } catch(e){}
+      try { addPlayerToDOM(playerMeta); } catch(e){}
       localStorage.setItem('lobbyCode', lobbyCode);
       localStorage.setItem('isHost', 'true');
       console.log('Lobby erstellt', lobbyCode);
@@ -411,35 +412,54 @@ document.addEventListener('DOMContentLoaded', async function() {
 // DOM FUNKTIONEN
 // ========================================
 function addPlayerToDOM(player) {
-  // Pr\u00fcfe ob Spieler bereits existiert
-  if (document.getElementById('player-' + player.id)) {
-    console.log('\u26a0\ufe0f Spieler bereits in DOM:', player.name);
+  // Defensive defaults to avoid rendering 'undefined'
+  if (!player) return;
+  // Ensure minimal shape
+  const id = player.id || (player.socketId || player.playerId) || ('p_' + Math.random().toString(36).slice(2,8));
+  const name = (player.name === undefined || player.name === null || player.name === '') ? (player.username || 'Spieler') : player.name;
+  const avatar = player.avatar || (player.id ? ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + id) : 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + Math.random());
+  const score = (typeof player.score === 'number') ? player.score : (player.score ? Number(player.score) : 0);
+  const isHostFlag = !!player.isHost;
+
+  // If element already exists, update it instead of re-creating
+  const existing = document.getElementById('player-' + id);
+  if (existing) {
+    // update avatar, name, score
+    const img = existing.querySelector('.player-avatar');
+    if (img) img.src = avatar;
+    const nameEl = existing.querySelector('.player-name');
+    if (nameEl) nameEl.textContent = name + (isHostFlag ? ' 👑' : '');
+    const scoreEl = existing.querySelector('.player-score');
+    if (scoreEl) scoreEl.textContent = `${score} Punkte`;
     return;
   }
 
   const container = document.getElementById('players-container');
+  if (!container) return;
+
   const card = document.createElement('div');
   card.className = 'player-card';
-  card.id = 'player-' + player.id;
+  card.id = 'player-' + id;
   card.innerHTML = `
-    <img src="${player.avatar}" alt="${player.name}" class="player-avatar">
-    <span class="player-name">${player.name}${player.isHost ? ' \ud83d\udc51' : ''}</span>
-    <span class="player-score">${player.score} Punkte</span>
+    <img src="${avatar}" alt="${name}" class="player-avatar">
+    <span class="player-name">${name}${isHostFlag ? ' \ud83d\udc51' : ''}</span>
+    <span class="player-score">${score} Punkte</span>
   `;
 
   container.appendChild(card);
 
-  extractDominantColor(player.avatar, (color) => {
-    applyPlayerColor(card, color);
+  // Apply color extraction safely
+  extractDominantColor(avatar, (color) => {
+    try { applyPlayerColor(card, color); } catch (e) { /* ignore color failures */ }
   });
 
   // Host kann Spieler auswählen (Klick auf Karte)
   card.addEventListener('click', () => {
     if (!isHost) return;
-    selectPlayerForPoints(player.id);
+    selectPlayerForPoints(id);
   });
 
-  console.log('\u2795 Spieler zur DOM hinzugef\u00fcgt:', player.name);
+  console.log('\u2795 Spieler zur DOM hinzugef\u00fcgt:', name, id);
 }
 
 function removePlayerFromDOM(playerId) {
@@ -678,36 +698,71 @@ function copyLobbyLink() {
   }
 }
 
-// Kleiner Tooltip / Animation neben dem Button
+// Accessibility: announce changes for screen-readers
+function announceForA11y(message) {
+  try {
+    const el = document.getElementById('a11y-status');
+    if (el) {
+      el.textContent = '';
+      // small delay to ensure assistive tech notices change
+      setTimeout(() => { el.textContent = message; }, 50);
+    }
+  } catch (e) { console.warn('announceForA11y failed', e); }
+}
+
+function isSmallScreen() {
+  try { return window.matchMedia && window.matchMedia('(max-width: 600px)').matches; } catch (e) { return false; }
+}
+
+// Enhanced tooltip: on small screens, use notification + a11y announce; on desktop show visual tooltip
 function showCopyTooltip(button, text) {
   try {
+    if (!button) {
+      // fallback to notification
+      showNotification(text || 'Kopiert', 'success', 1400);
+      announceForA11y(text || 'Kopiert');
+      return;
+    }
+
+    if (isSmallScreen()) {
+      // Mobile: use non-blocking notification + a11y
+      showNotification(text || 'Kopiert!', 'success', 1400);
+      announceForA11y(text || 'Kopiert');
+      return;
+    }
+
+    // Desktop: create a tooltip element attached to document
     const tip = document.createElement('div');
     tip.className = 'copy-tooltip';
     tip.textContent = text || 'Kopiert!';
+    // Make tooltip aria-hidden for assistive tech (we announce separately)
+    tip.setAttribute('aria-hidden', 'true');
     document.body.appendChild(tip);
 
+    // Position: prefer above button, centered
     const rect = button.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const left = rect.left + rect.width / 2 - 40; // center-ish
-    const top = rect.top + scrollTop - 36; // above the button
+    const tipWidth = 120; // approximate
+    const left = Math.max(8, rect.left + rect.width / 2 - tipWidth / 2);
+    const top = rect.top + scrollTop - 40; // ~above
 
     tip.style.position = 'absolute';
     tip.style.left = left + 'px';
     tip.style.top = top + 'px';
-    tip.style.background = '#7c3aed';
-    tip.style.color = '#fff';
-    tip.style.padding = '6px 10px';
-    tip.style.borderRadius = '6px';
-    tip.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.35)';
-    tip.style.zIndex = 1200;
+    tip.style.minWidth = '80px';
+    tip.style.textAlign = 'center';
+    tip.style.pointerEvents = 'none';
     tip.style.opacity = '0';
-    tip.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
     tip.style.transform = 'translateY(6px)';
+    tip.style.transition = 'transform 0.18s ease, opacity 0.18s ease';
 
     requestAnimationFrame(() => {
       tip.style.opacity = '1';
       tip.style.transform = 'translateY(0)';
     });
+
+    // Announce for screen readers too
+    announceForA11y(text || 'Kopiert');
 
     setTimeout(() => {
       tip.style.opacity = '0';
@@ -716,69 +771,7 @@ function showCopyTooltip(button, text) {
     }, 1200);
   } catch (e) {
     console.error('showCopyTooltip error', e);
-  }
-}
-
-// ========================================
-// HELPER FUNKTIONEN
-// ========================================
-function loadCurrentUser() {
-  const storedUser = localStorage.getItem('discordUser');
-  if (storedUser) {
-    currentUser = JSON.parse(storedUser);
-    console.log('👤 User geladen:', currentUser.username || currentUser.global_name);
-    return true;
-  }
-  return false;
-}
-
-function displayHostInfo(hostData) {
-  const hostAvatar = document.getElementById('host-avatar');
-  const hostName = document.getElementById('host-name');
-
-  if (!hostAvatar || !hostName) return;
-
-  if (hostData) {
-    hostAvatar.src = hostData.avatar;
-    hostName.textContent = hostData.name;
-  } else if (currentUser && isHost) {
-    hostAvatar.src = getUserAvatar(currentUser);
-    hostName.textContent = currentUser.global_name || currentUser.username;
-  }
-}
-
-function getUserAvatar(user) {
-  if (user.avatar) {
-    return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
-  } else {
-    const discriminator = parseInt(user.discriminator || '0') % 5;
-    return `https://cdn.discordapp.com/embed/avatars/${discriminator}.png`;
-  }
-}
-
-function initUI() {
-  const lobbyCodeDisplay = document.getElementById('lobby-code-display');
-  const lobbyCodeContainer = document.getElementById('lobby-code-container');
-  const hostControls = document.getElementById('host-controls');
-  const hostEvalButtons = document.getElementById('host-eval-buttons');
-
-  // Setze den Code (falls bereits vorhanden)
-  try { updateLobbyCodeDisplay(lobbyCode); } catch (e) {}
-
-  if (isHost) {
-    if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
-    if (hostControls) hostControls.style.display = 'block';
-    if (hostEvalButtons) {
-      hostEvalButtons.style.display = 'flex';
-      hostEvalButtons.setAttribute('aria-hidden', 'false');
-    }
-  } else {
-    // Nicht mehr komplett ausblenden: updateLobbyCodeDisplay zeigt für Clients einen Teaser und den Link-Button
-    if (hostControls) hostControls.style.display = 'none';
-    if (hostEvalButtons) {
-      hostEvalButtons.style.display = 'none';
-      hostEvalButtons.setAttribute('aria-hidden', 'true');
-    }
+    try { showNotification(text || 'Kopiert!', 'success', 1200); announceForA11y(text || 'Kopiert'); } catch(e){}
   }
 }
 
@@ -813,6 +806,23 @@ function setupEventListeners() {
       broadcast({ type: 'eval', result: 'wrong', timestamp: Date.now(), duration: 300 });
     });
   }
+
+  // Copy button wiring (accessible: click + keyboard)
+  const copyCodeBtn = document.getElementById('copy-code-btn');
+  const copyLinkBtn = document.getElementById('copy-link-btn');
+
+  if (copyCodeBtn) {
+    copyCodeBtn.addEventListener('click', (e) => { e.preventDefault(); copyLobbyCode(); });
+    copyCodeBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyLobbyCode(); } });
+    copyCodeBtn.setAttribute('tabindex', '0');
+  }
+
+  if (copyLinkBtn) {
+    copyLinkBtn.addEventListener('click', (e) => { e.preventDefault(); copyLobbyLink(); });
+    copyLinkBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyLobbyLink(); } });
+    copyLinkBtn.setAttribute('tabindex', '0');
+  }
+
 }
 
 // Helper: zeige eval-Overlay (wiederverwendet für Host & Clients)

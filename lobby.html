@@ -90,6 +90,8 @@
 </head>
 <body>
 
+  <div id="a11y-status" aria-live="polite" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">&nbsp;</div>
+
   <!-- Host Info (Top Left) -->
   <div class="host-info">
     <div class="host-label">👑 HOST</div>
@@ -114,8 +116,8 @@
       <div class="lobby-code-display" id="lobby-code-container" style="display:none;">
         <span class="code-label">Lobby-Code:</span>
         <code class="code-value" id="lobby-code-display">------</code>
-        <button onclick="copyLobbyCode()" id="copy-code-btn" style="margin-left:12px;">Code kopieren</button>
-        <button onclick="copyLobbyLink()" id="copy-link-btn" style="margin-left:8px;">Link kopieren</button>
+        <button id="copy-code-btn" aria-label="Lobby-Code kopieren" title="Lobby-Code kopieren" style="margin-left:12px;">Code kopieren</button>
+        <button id="copy-link-btn" aria-label="Lobby-Link kopieren" title="Lobby-Link kopieren" style="margin-left:8px;">Link kopieren</button>
         <span class="lobby-code-teaser" id="lobby-code-teaser" style="margin-left:12px; color:#f3e8ff; display:none; font-weight:600;">Lobby-Code nur für Host sichtbar</span>
       </div>
     </div>
