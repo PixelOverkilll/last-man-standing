@@ -584,6 +584,32 @@ function awardPoints(playerId, delta) {
   // hidePointsSidebar(); // Entfernt: Leiste bleibt offen
 }
 
+// Nach dem Setzen des Lobby-Codes:
+function updateLobbyCodeDisplay(code) {
+  const codeDisplay = document.getElementById('lobby-code-display');
+  const codeCopy = document.getElementById('lobby-code-copy');
+  if (codeDisplay) codeDisplay.textContent = code;
+  if (codeCopy) codeCopy.value = code;
+}
+
+// Kopierfunktion für den Lobby-Code
+function copyLobbyCode() {
+  const codeCopy = document.getElementById('lobby-code-copy');
+  if (codeCopy) {
+    codeCopy.select();
+    codeCopy.setSelectionRange(0, 999); // Für mobile Geräte
+    document.execCommand('copy');
+  }
+}
+
+// Join-Funktion über Eingabefeld
+function joinLobbyByInput() {
+  const input = document.getElementById('join-code-input');
+  if (input && input.value) {
+    joinLobby(input.value.trim());
+  }
+}
+
 // ========================================
 // HELPER FUNKTIONEN
 // ========================================
