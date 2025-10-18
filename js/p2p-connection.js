@@ -44,10 +44,18 @@ class P2PConnection {
       // Verbesserte Fehlerbehandlung für PeerJS-Verbindungen
       this.peer.on('error', (error) => {
         console.error('❌ Peer Error beim Erstellen der Lobby:', error);
-        if (error.type === 'unavailable-id') {
-          console.error('⚠️ Der Lobby-Code ist bereits vergeben. Versuche es erneut.');
-        } else {
-          console.error('⚠️ Ein unbekannter Fehler ist aufgetreten:', error.message);
+        switch (error.type) {
+          case 'unavailable-id':
+            console.error('⚠️ Der Lobby-Code ist bereits vergeben. Versuche es erneut.');
+            alert('Lobby-Code bereits vergeben. Bitte erneut versuchen.');
+            break;
+          case 'network':
+            console.error('⚠️ Netzwerkfehler. Überprüfen Sie Ihre Verbindung.');
+            alert('Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung.');
+            break;
+          default:
+            console.error('⚠️ Ein unbekannter Fehler ist aufgetreten:', error.message);
+            alert('Ein unbekannter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
         }
         reject(error);
       });

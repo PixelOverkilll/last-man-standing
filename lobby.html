@@ -21,7 +21,10 @@
         script.src = 'https://cdn.jsdelivr.net/npm/peerjs@1.5.2/dist/peerjs.min.js';
         script.onerror = function() {
           console.error('❌ PeerJS konnte nicht geladen werden!');
-          alert('Fehler: P2P-Bibliothek konnte nicht geladen werden. Bitte Seite neu laden.');
+          alert('Fehler: P2P-Bibliothek konnte nicht geladen werden. Bitte Seite neu laden oder überprüfen Sie Ihre Internetverbindung.');
+        };
+        script.onload = function() {
+          console.log('✅ PeerJS Fallback erfolgreich geladen');
         };
         document.head.appendChild(script);
       } else {
