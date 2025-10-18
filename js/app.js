@@ -476,9 +476,6 @@ document.addEventListener('DOMContentLoaded', function() {
           btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
         }
 
-        // Force fallback for now so the user always sees an icon (emoji fallback)
-        btnToggle.classList.add('show-fallback');
-
         // Fallback detection: if SVGs are not rendering/shown, show emoji fallback
         const ensureFallbackVisibility = () => {
           try {
@@ -487,21 +484,20 @@ document.addEventListener('DOMContentLoaded', function() {
             svgs.forEach(sv => {
               const cs = window.getComputedStyle(sv);
               const rect = sv.getBoundingClientRect();
-              console.debug('SVG computed:', {display: cs.display, visibility: cs.visibility, opacity: cs.opacity, rectWidth: rect.width, rectHeight: rect.height});
+              // determine visibility without logging
               if (cs && cs.display !== 'none' && cs.visibility !== 'hidden' && Number(cs.opacity) !== 0 && rect.width > 0 && rect.height > 0) {
                 visibleSvg = true;
               }
             });
-            console.debug('Admin modal: visibleSvg=', visibleSvg);
             if (!visibleSvg) {
-              btnToggle.classList.add('show-fallback');
+              
             } else {
               btnToggle.classList.remove('show-fallback');
             }
           } catch (err) {
             // If anything goes wrong in detection, show fallback as safe default
-            console.error('Error during SVG visibility detection:', err);
-            btnToggle.classList.add('show-fallback');
+            // keep fallback on error but avoid noisy console output in prod
+            
           }
         };
 
