@@ -1,0 +1,18 @@
+Opening page: https://pixeloverkilll.github.io/last-man-standing/
+[PAGE] 🚀 Running in production mode
+[PAGE] 📍 Redirect URI: https://pixeloverkilll.github.io/last-man-standing/index.html
+[PAGE] 🤖 Bot API: https://last-man-standing-n81r.onrender.com
+[PAGE] 🔌 Socket URL: https://last-man-standing-1.onrender.com
+[PAGE] ✅ PeerJS erfolgreich geladen
+[PAGE] socket.io client failed to load from https://cdn.socket.io/4.7.2/socket.io.min.js  — socket-client may not work
+[PAGE] [socket-client] verbinde mit CONFIG Socket URL: https://last-man-standing-1.onrender.com
+[PAGE] [socket-client] verbunden mit id m31za6CtFqXxzLsOAAAN
+[PAGE] Failed to load resource: the server responded with a status of 401 ()
+C:\Users\Crave\IdeaProjects\Last man standing\server\puppeteer-test-final.js:30
+  await page.waitForTimeout(1500);
+             ^
+
+TypeError: page.waitForTimeout is not a function
+    at C:\Users\Crave\IdeaProjects\Last man standing\server\puppeteer-test-final.js:30:14
+
+Node.js v22.20.0

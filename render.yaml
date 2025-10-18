@@ -4,7 +4,7 @@ services:
     env: node
     plan: free
     region: oregon
-    branch: main
+    branch: feature/lobby-code-ui
     buildCommand: npm install
     startCommand: npm run ws-server
     envVars:
@@ -12,4 +12,3 @@ services:
         value: "3000"
     healthCheckPath: /
     autoDeploy: true
-

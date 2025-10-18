@@ -1,0 +1,36 @@
+name: Auto Create Pull Request
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create_pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: create pull request from feature branch'
+          title: 'Auto PR: ${{ github.ref_name }} → main'
+          body: |
+            Automatisch erstellter Pull Request für Branch `${{ github.ref_name }}`.
+
+            Änderungen:
+            - UI: Lobby-Code sichtbar, Copy-Button, Join-by-code input
+            - Config: Production URLs auf last-man-standing-1.onrender.com gesetzt
+            - Server: CORS-Härtung via ALLOWED_ORIGINS
+
+          base: main
+          head: ${{ github.ref_name }}
+          labels: 'auto-pr'
+
