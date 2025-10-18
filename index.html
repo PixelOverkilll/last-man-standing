@@ -21,6 +21,28 @@
   <link rel="manifest" href="site.webmanifest">
   <meta name="theme-color" content="#8b27c4">
 
+  <!-- Redirect GitHub Pages -> Render (preserve path/query/hash, remove /last-man-standing prefix) -->
+  <script>
+    (function(){
+      try {
+        var ghHosts = ['pixeloverkilll.github.io', 'www.pixeloverkilll.github.io'];
+        var host = window.location.hostname;
+        if (ghHosts.indexOf(host) !== -1) {
+          var targetHost = 'last-man-standing-1.onrender.com';
+          var path = window.location.pathname || '/';
+          // remove repo name prefix if present
+          if (path.indexOf('/last-man-standing') === 0) {
+            path = path.replace('/last-man-standing', '') || '/';
+          }
+          var newUrl = window.location.protocol + '//' + targetHost + path + window.location.search + window.location.hash;
+          if (window.location.hostname !== targetHost) {
+            window.location.replace(newUrl);
+          }
+        }
+      } catch (e) { /* fail silently */ }
+    })();
+  </script>
+
   <!-- Configuration Script (muss VOR app.js geladen werden) -->
   <script src="config.js"></script>
 
