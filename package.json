@@ -1,5 +1,5 @@
 {
-  "name": " ",
+  "name": "last-man-standing",
   "version": "0.0.1",
   "description": "",
   "private": true,
@@ -11,7 +11,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "webpack serve --open --config webpack.config.dev.js",
-    "build": "webpack --config webpack.config.prod.js"
+    "build": "webpack --config webpack.config.prod.js",
+    "ws-server": "node server/socket-server.js"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
@@ -22,6 +23,9 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
-    "peerjs": "^1.5.5"
+    "peerjs": "^1.5.5",
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2"
   }
 }
