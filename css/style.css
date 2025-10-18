@@ -710,51 +710,51 @@ body.bg-waves::before {
 .game-features-container {
   display: flex;
   justify-content: center;
-  gap: 18px;
+  gap: 14px; /* etwas engerer Abstand */
   margin-top: 20px;
   flex-wrap: wrap; /* erlaubt Umbruch auf kleinen Bildschirmen */
 }
 
 .game-features-container .feature {
-  width: 260px; /* breiter für lesbare Titel */
-  height: 110px; /* flacheres Aussehen */
-  padding: 12px 16px; /* etwas mehr seitliche Polsterung */
+  width: 220px; /* etwas kompakter als vorher (260px) */
+  height: 100px; /* flacheres Aussehen */
+  padding: 10px 12px; /* kompakteres Padding */
   max-width: 100%;
   background-color: #3a3a3a;
-  border-radius: 12px;
+  border-radius: 10px;
   text-align: center;
   color: #fff;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
-  transition: transform 0.18s, box-shadow 0.18s;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 0.16s, box-shadow 0.16s;
 
   /* Flexbox für vertikale Zentrierung von Icon + Titel */
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .game-features-container .feature:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.16);
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.14);
 }
 
-/* Icon in den Feature-Boxen etwas größer, neben dem Text */
+/* Icon in den Feature-Boxen etwas kleiner für kompakteres Layout */
 .game-features-container .feature .card-icon {
-  font-size: 2.4rem; /* etwas größer für bessere Proportion */
-  margin-bottom: 0; /* entferne vertikalen Abstand, da wir row-layout nutzen */
-  transition: transform 0.3s ease, color 0.3s ease;
+  font-size: 2.2rem; /* verkleinert von 2.4rem */
+  margin-bottom: 0;
+  transition: transform 0.28s ease, color 0.28s ease;
 }
 
 .game-features-container .feature:hover .card-icon {
-  transform: scale(1.2); /* dezente Vergrößerung */
+  transform: scale(1.15);
   color: #ffcc00;
 }
 
 /* Titel leicht kompakter halten */
 .game-features-container .feature .option-title {
-  font-size: 1.05rem;
+  font-size: 1rem; /* leicht reduziert */
   font-weight: 700;
   line-height: 1.1;
   margin: 0;
@@ -764,17 +764,18 @@ body.bg-waves::before {
 /* Responsives Verhalten: auf sehr kleinen Bildschirmen stückeln die Boxen */
 @media (max-width: 600px) {
   .game-features-container {
-    gap: 12px;
+    gap: 10px;
   }
   .game-features-container .feature {
-    width: calc(50% - 12px);
+    width: calc(50% - 10px);
     height: auto; /* flexible Höhe, damit Inhalt nicht abgeschnitten wird */
-    padding: 10px;
+    padding: 8px;
     flex-direction: column; /* Icon über Titel auf kleinen Bildschirmen */
     text-align: center;
   }
   .game-features-container .feature .option-title {
     text-align: center;
     margin-top: 6px;
+    font-size: 0.95rem;
   }
 }
