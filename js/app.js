@@ -386,6 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const btnSubmit = document.getElementById('admin-modal-submit');
       const btnCancel = document.getElementById('admin-modal-cancel');
       const btnClose = document.getElementById('admin-modal-close');
+      const btnToggle = document.getElementById('admin-password-toggle');
 
       function cleanup() {
         // hide modal and remove listeners
@@ -395,7 +396,55 @@ document.addEventListener('DOMContentLoaded', function() {
         btnSubmit.removeEventListener('click', onSubmit);
         btnCancel.removeEventListener('click', onCancel);
         btnClose.removeEventListener('click', onCancel);
+        if (btnToggle) btnToggle.removeEventListener('click', onToggle);
         modal.removeEventListener('keydown', onKeyDown);
+        // reset toggle state
+        if (btnToggle) {
+          // Set aria attributes and ensure password is hidden
+          btnToggle.setAttribute('aria-pressed', 'false');
+          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
+          btnToggle.classList.remove('is-pressed');
+          input.type = 'password';
+          // If SVG icons are present, ensure the default (hidden) icon state
+          const svgs = btnToggle.querySelectorAll('svg');
+          svgs.forEach(svg => svg.style.display = '');
+        }
+      }
+
+      function onToggle(e) {
+        e && e.preventDefault();
+        const pressed = btnToggle.getAttribute('aria-pressed') === 'true';
+        if (pressed) {
+          // currently visible -> hide
+          input.type = 'password';
+          btnToggle.setAttribute('aria-pressed', 'false');
+          btnToggle.setAttribute('aria-label', 'Passwort anzeigen');
+          btnToggle.classList.remove('is-pressed');
+        } else {
+          // currently hidden -> show
+          input.type = 'text';
+          btnToggle.setAttribute('aria-pressed', 'true');
+          btnToggle.setAttribute('aria-label', 'Passwort verbergen');
+          btnToggle.classList.add('is-pressed');
+        }
+
+        // Keep focus on input
+        input.focus();
+
+        // Toggle visibility of any inline SVG children so CSS can animate/switch icons
+        if (btnToggle) {
+          const eyeOn = btnToggle.querySelector('.icon-eye');
+          const eyeOff = btnToggle.querySelector('.icon-eye-off');
+          if (eyeOn || eyeOff) {
+            if (btnToggle.getAttribute('aria-pressed') === 'true') {
+              if (eyeOn) eyeOn.style.display = '';
+              if (eyeOff) eyeOff.style.display = 'none';
+            } else {
+              if (eyeOn) eyeOn.style.display = 'none';
+              if (eyeOff) eyeOff.style.display = '';
+            }
+          }
+        }
       }
 
       function onSubmit(e) {
@@ -425,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
       btnSubmit.addEventListener('click', onSubmit);
       btnCancel.addEventListener('click', onCancel);
       btnClose.addEventListener('click', onCancel);
+      if (btnToggle) btnToggle.addEventListener('click', onToggle);
       modal.addEventListener('keydown', onKeyDown);
     });
 

@@ -887,7 +887,63 @@ body.bg-waves::before {
   gap: 10px;
 }
 
-@media (max-width: 420px) {
-  .admin-modal-panel { padding: 14px; border-radius: 10px; }
-  .admin-password-input { padding: 10px 12px; font-size: 0.95rem; }
+/* Admin password toggle (SVG eye button) */
+#admin-password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 2px solid rgba(124,58,237,0.18);
+  border-radius: 10px;
+  color: #e9d5ff;
+  cursor: pointer;
+  padding: 6px;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+}
+
+#admin-password-toggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 5px rgba(124,58,237,0.12);
+}
+
+/* Default: show "eye-off" (hidden) icon, hide "eye" */
+#admin-password-toggle .icon-eye {
+  display: none;
+  width: 20px;
+  height: 20px;
+}
+#admin-password-toggle .icon-eye-off {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
+
+/* When pressed (password visible) */
+#admin-password-toggle.is-pressed {
+  background: rgba(124,58,237,0.09);
+  border-color: #7c3aed;
+  transform: translateY(-1px);
+}
+#admin-password-toggle.is-pressed .icon-eye {
+  display: inline-block;
+}
+#admin-password-toggle.is-pressed .icon-eye-off {
+  display: none;
+}
+
+/* Ensure SVGs inherit color and are sized consistently */
+#admin-password-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  display: block;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  #admin-password-toggle {
+    transition: none;
+  }
 }
