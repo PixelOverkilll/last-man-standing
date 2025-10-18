@@ -12,8 +12,17 @@ app.use(express.static(path.join(__dirname, '..')));
 
 const server = http.createServer(app);
 const io = new Server(server, {
+  // Use ALLOWED_ORIGINS env var (comma-separated) or fall back to the production Render URL
   cors: {
-    origin: '*',
+    origin: (function(){
+      try {
+        if (process.env.ALLOWED_ORIGINS) {
+          return process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim());
+        }
+      } catch (e) {}
+      return ['https://last-man-standing-1.onrender.com'];
+    })(),
+    credentials: true
   }
 });
 
