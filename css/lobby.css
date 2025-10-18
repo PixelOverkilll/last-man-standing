@@ -356,6 +356,11 @@ body.bg-waves {
   }
 
   .btn-correct {
+    top: 140px; /* Positioniert den Button unter dem 'X'-Button */
+    right: 20px;
+  }
+
+  .btn-correct {
     background: rgba(34, 197, 94, 0.85);
     border-color: #16a34a;
   }
