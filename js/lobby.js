@@ -177,6 +177,24 @@ document.addEventListener('DOMContentLoaded', async function() {
   // --- NEU: Anwenden des gespeicherten Hintergrunds in der Lobby ---
   applySavedBackground();
 
+  // Wenn wir Host sind, versuche optimistisch den Host-Player aus localStorage zu laden
+  if (isHost) {
+    try {
+      const storedHost = localStorage.getItem('hostPlayer');
+      if (storedHost) {
+        const hostPlayer = JSON.parse(storedHost);
+        // füge Host in players map ein, damit UI sofort den Host zeigt
+        if (hostPlayer && hostPlayer.id) {
+          players.set(hostPlayer.id, hostPlayer);
+          try { addPlayerToDOM(hostPlayer); } catch (e) { console.warn('addPlayerToDOM failed for hostPlayer', e); }
+          try { displayHostInfo(hostPlayer); } catch (e) { /* ignore if function not present */ }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not read hostPlayer from localStorage', e);
+    }
+  }
+
   // Reagiere auf Änderungen in localStorage (z.B. anderes Tab ändert Auswahl)
   window.addEventListener('storage', (evt) => {
     if (evt.key === 'backgroundStyle') {
