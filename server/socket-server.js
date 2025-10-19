@@ -54,7 +54,14 @@ io.on('connection', (socket) => {
         existing.hostId = socket.id;
         socket.join(lobbyId);
         socket.data.player = data && data.player ? data.player : { id: socket.id, name: 'Host', avatar: '' };
+        // Ensure the re-taking host record uses the current socket id (avoid stale ids)
+        socket.data.player.id = socket.id;
         console.log(`Lobby ${lobbyId} wieder übernommen von ${socket.id}`);
+        // Notify all clients in the lobby about the new host immediately (update lobby-state)
+        try {
+          const players = Array.from(existing.players.values());
+          io.to(lobbyId).emit('lobby-state', { host: socket.data.player, players });
+        } catch (e) { console.warn('Failed to emit lobby-state on host takeover', e); }
         cb && cb({ ok: true, lobbyId });
         return;
       }
@@ -71,6 +78,14 @@ io.on('connection', (socket) => {
 
     // Optional host metadata
     socket.data.player = data && data.player ? data.player : { id: socket.id, name: 'Host', avatar: '' };
+    // Ensure the stored player record includes the socket id so clients receive stable ids
+    socket.data.player.id = socket.id;
+
+    // Add host to lobby.players so clients see the host in the players list as well
+    const createdLobby = lobbies.get(lobbyId);
+    if (createdLobby) {
+      createdLobby.players.set(socket.id, socket.data.player);
+    }
 
     console.log(`Lobby ${lobbyId} erstellt von ${socket.id}`);
     cb && cb({ ok: true, lobbyId });
@@ -78,7 +93,8 @@ io.on('connection', (socket) => {
 
   socket.on('join-lobby', (data, cb) => {
     const lobbyId = data && data.lobbyId;
-    const player = data && data.player ? data.player : { id: socket.id, name: 'Spieler', avatar: '' };
+    // Use provided player metadata but ensure we attach the socket id on the server
+    const player = data && data.player ? data.player : { name: 'Spieler', avatar: '' };
 
     if (!lobbyId || !lobbies.has(lobbyId)) {
       cb && cb({ ok: false, error: 'lobby-not-found' });
@@ -86,6 +102,8 @@ io.on('connection', (socket) => {
     }
 
     const lobby = lobbies.get(lobbyId);
+    // Attach server-side socket id to the player object (important for client-side DOM ids)
+    player.id = socket.id;
     lobby.players.set(socket.id, player);
     socket.join(lobbyId);
     socket.data.player = player;
@@ -97,7 +115,7 @@ io.on('connection', (socket) => {
 
     socket.emit('lobby-state', { host: hostInfo, players });
 
-    // Benachrichtige alle anderen in der Lobby
+    // Benachrichtige alle anderen in der Lobby (emit player including id)
     socket.to(lobbyId).emit('player-joined', { player });
 
     console.log(`${player.name} (${socket.id}) ist Lobby ${lobbyId} beigetreten`);

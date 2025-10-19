@@ -166,6 +166,41 @@ function attachSocketHandlers() {
     console.log('[socket] verbunden mit', socket.id);
   });
 
+  // Host temporär offline - zeige persistenten Banner und deaktiviere host-only Controls
+  socket.on('host-disconnected-temporary', () => {
+    console.warn('[socket] host-disconnected-temporary received');
+    showHostOfflineBanner();
+    // deactivate host controls to avoid accidental actions
+    try { document.getElementById('host-controls')?.classList.add('disabled'); } catch(e){}
+  });
+
+  // Wenn ein neues lobby-state kommt und ein Host vorhanden ist, entferne Banner
+  socket.on('lobby-state', (data) => {
+    console.log('[socket] lobby-state', data);
+    if (!data.host) {
+      showHostOfflineBanner();
+    } else {
+      hideHostOfflineBanner();
+      // re-enable host controls if this client is host
+      try { if (localStorage.getItem('isHost') === 'true') document.getElementById('host-controls')?.classList.remove('disabled'); } catch(e){}
+    }
+    // Setze Host-Info
+    if (data.host) displayHostInfo(data.host);
+    // Füge alle Spieler hinzu
+    if (Array.isArray(data.players)) {
+      players.clear();
+      document.querySelectorAll('[id^="player-"]').forEach(el => el.remove());
+      data.players.forEach(p => {
+        // Defensive normalization: ensure each player has an id and avatar
+        if (!p) return;
+        p.id = p.id || p.socketId || ('p_' + Math.random().toString(36).slice(2,8));
+        p.avatar = p.avatar || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + (p.id || (p.name || Math.random())));
+        players.set(p.id, p);
+        addPlayerToDOM(p);
+      });
+    }
+  });
+
   socket.on('connect_error', (err) => {
     console.error('[socket] connect_error', err);
     showNotification('❌ Socket-Verbindung fehlgeschlagen', 'error', 2500);
@@ -187,24 +222,13 @@ function attachSocketHandlers() {
   });
 
 
-  socket.on('lobby-state', (data) => {
-    console.log('[socket] lobby-state', data);
-    // Setze Host-Info
-    if (data.host) displayHostInfo(data.host);
-    // Füge alle Spieler hinzu
-    if (Array.isArray(data.players)) {
-      players.clear();
-      document.querySelectorAll('[id^="player-"]').forEach(el => el.remove());
-      data.players.forEach(p => {
-        players.set(p.id, p);
-        addPlayerToDOM(p);
-      });
-    }
-  });
-
   socket.on('player-joined', (payload) => {
     const p = payload.player;
     console.log('[socket] player-joined', p);
+    if (!p) return;
+    // Defensive normalization: ensure id and avatar exist
+    p.id = p.id || p.socketId || ('p_' + Math.random().toString(36).slice(2,8));
+    p.avatar = p.avatar || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + (p.id || (p.name || Math.random())));
     if (!players.has(p.id)) {
       players.set(p.id, p);
       addPlayerToDOM(p);
@@ -1104,6 +1128,34 @@ function applySavedBackground() {
   }
 }
 
+// Helper: get a safe avatar URL for a user object (Discord-aware, with fallbacks)
+function getUserAvatar(user) {
+  try {
+    if (!user) {
+      // fallback to a generated avatar
+      return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + Math.random();
+    }
+
+    // If avatar already looks like a full URL, return it directly
+    if (typeof user.avatar === 'string' && /^https?:\/\//i.test(user.avatar)) {
+      return user.avatar;
+    }
+
+    // Discord-style avatar: needs id + hash
+    if (user.id && user.avatar) {
+      return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`;
+    }
+
+    // If discriminator is present, use Discord embed default avatars (0-4)
+    const disc = parseInt(user.discriminator || '0', 10) || 0;
+    const idx = Math.abs(disc) % 5;
+    return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+  } catch (e) {
+    // ultimate fallback
+    return 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (user && (user.id || user.name) ? (user.id || user.name) : Math.random());
+  }
+}
+
 console.log('✅ Lobby System MIT P2P geladen!');
 
 // --- Debug Overlay: zeigt wichtige Werte live an ---
@@ -1140,3 +1192,23 @@ console.log('✅ Lobby System MIT P2P geladen!');
   } catch (e) { /* non-fatal */ }
 })();
 
+// Host-Offline Banner: persistente Anzeige, wenn Host getrennt ist
+function showHostOfflineBanner() {
+  let banner = document.getElementById('host-offline-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'host-offline-banner';
+    banner.className = 'host-offline-banner';
+    banner.innerHTML = `
+      <div>Der Host ist vorübergehend offline.</div>
+      <div>Die Lobby bleibt sichtbar, bis der Host zurückkehrt.</div>
+    `;
+    document.body.appendChild(banner);
+  }
+  banner.style.display = 'block';
+}
+
+function hideHostOfflineBanner() {
+  const banner = document.getElementById('host-offline-banner');
+  if (banner) banner.style.display = 'none';
+}
