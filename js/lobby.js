@@ -1,367 +1,116 @@
 // ========================================
-// LOBBY SYSTEM - MIT PEER-TO-PEER
+// LOBBY SYSTEM - MIT WEB SOCKET
 // ========================================
 
-console.log('🎮 Lobby System mit P2P lädt...');
+console.log('🎮 Lobby System mit WebSocket lädt...');
 
 // Globale Variablen
 let isHost = false;
 let lobbyCode = '';
 let currentUser = null;
 let players = new Map(); // playerId -> playerData
-let peer = null;
-let connections = new Map(); // playerId -> connection
-let hostConnection = null;
-let selectedPlayerId = null;
+let socket = null;
 
-// ========================================
-// FARBEXTRAKTION FÜR AVATARE
-// ========================================
-function extractDominantColor(imageUrl, callback) {
-  const img = new Image();
-  img.crossOrigin = 'Anonymous';
-
-  img.onload = function() {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    ctx.drawImage(img, 0, 0);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
-
-    let r = 0, g = 0, b = 0;
-    let count = 0;
-
-    for (let i = 0; i < data.length; i += 40) {
-      r += data[i];
-      g += data[i + 1];
-      b += data[i + 2];
-      count++;
-    }
-
-    r = Math.floor(r / count);
-    g = Math.floor(g / count);
-    b = Math.floor(b / count);
-
-    const hsl = rgbToHsl(r, g, b);
-
-    let targetHue = hsl[0];
-    const purpleHue = 0.75;
-
-    let hueDiff = Math.abs(targetHue - purpleHue);
-    if (hueDiff > 0.5) hueDiff = 1 - hueDiff;
-
-    if (hueDiff > 0.15) {
-      targetHue = purpleHue * 0.7 + targetHue * 0.3;
-    }
-
-    hsl[1] = Math.min(hsl[1] * 1.8, 0.9);
-    hsl[2] = Math.max(0.45, Math.min(hsl[2], 0.65));
-
-    const rgb = hslToRgb(targetHue, hsl[1], hsl[2]);
-    const color = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
-
-    callback(color);
-  };
-
-  img.onerror = function() {
-    callback('#7c3aed');
-  };
-
-  img.src = imageUrl;
-}
-
-function rgbToHsl(r, g, b) {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0;
-  } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-
-  return [h, s, l];
-}
-
-function hslToRgb(h, s, l) {
-  let r, g, b;
-
-  if (s === 0) {
-    r = g = b = l;
-  } else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-function applyPlayerColor(playerCard, color) {
-  const rgb = color.match(/\d+/g).map(Number);
-
-  // Setze CSS-Variablen für Avatar-Farbe
-  playerCard.style.setProperty('--avatar-color', color);
-  playerCard.style.setProperty('--avatar-rgb', `${rgb[0]},${rgb[1]},${rgb[2]}`);
-
-  playerCard.style.borderColor = color;
-  playerCard.style.boxShadow = `0 15px 40px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
-
-  const avatar = playerCard.querySelector('.player-avatar');
-  if (avatar) {
-    avatar.style.borderColor = color;
-    avatar.style.boxShadow = `0 0 25px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.9)`;
-  }
-
-  // Punkte-Leiste nutzt jetzt CSS-Variable, keine direkte Style-Zuweisung mehr
-  // const scoreElement = playerCard.querySelector('.player-score');
-  // if (scoreElement) {
-  //   scoreElement.style.borderColor = color;
-  //   scoreElement.style.backgroundColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
-  // }
-}
-
-// ========================================
-// SOCKET.IO (statt P2P) - Lobby Funktionen
-// ========================================
-let socket = window.__LMS_SOCKET || null;
-let _socketHandlersAttached = false;
-
-function ensureSocket() {
-  if (socket) return socket;
-  socket = io();
-  window.__LMS_SOCKET = socket;
-  attachSocketHandlers();
-  return socket;
-}
-
-function attachSocketHandlers() {
-  if (!socket || _socketHandlersAttached) return;
-  _socketHandlersAttached = true;
+// Verbindung zum WebSocket-Server herstellen
+function connectToServer() {
+  socket = io('https://last-man-standing-1.onrender.com');
 
   socket.on('connect', () => {
-    console.log('[socket] verbunden mit', socket.id);
+    console.log('Mit WebSocket-Server verbunden:', socket.id);
   });
 
-  socket.on('connect_error', (err) => {
-    console.error('[socket] connect_error', err);
-    showNotification('❌ Socket-Verbindung fehlgeschlagen', 'error', 2500);
+  socket.on('disconnect', () => {
+    console.log('Verbindung zum WebSocket-Server verloren.');
   });
 
-  socket.on('reconnect_attempt', (n) => {
-    console.log('[socket] reconnect attempt', n);
-    showNotification('🔁 Versuche, Socket neu zu verbinden...', 'info', 1400);
-  });
-
-  socket.on('reconnect_failed', () => {
-    console.error('[socket] reconnect_failed');
-    showNotification('❌ Socket-Reconnect fehlgeschlagen', 'error', 3000);
-  });
-
-  socket.on('reconnect', (attemptNumber) => {
-    console.log('[socket] reconnect erfolgreich nach', attemptNumber, 'Versuchen');
-    showNotification('✅ Socket wieder verbunden', 'success', 1400);
-  });
-
-
-  socket.on('lobby-state', (data) => {
-    console.log('[socket] lobby-state', data);
-    // Setze Host-Info
-    if (data.host) displayHostInfo(data.host);
-    // Füge alle Spieler hinzu
-    if (Array.isArray(data.players)) {
-      players.clear();
-      document.querySelectorAll('[id^="player-"]').forEach(el => el.remove());
-      data.players.forEach(p => {
-        players.set(p.id, p);
-        addPlayerToDOM(p);
-      });
-    }
-  });
-
-  socket.on('player-joined', (payload) => {
-    const p = payload.player;
-    console.log('[socket] player-joined', p);
-    if (!players.has(p.id)) {
-      players.set(p.id, p);
-      addPlayerToDOM(p);
-      showNotification(`✅ ${p.name} ist beigetreten`, 'success', 2000);
-    }
-  });
-
-  socket.on('player-left', (payload) => {
-    const id = payload.playerId;
-    console.log('[socket] player-left', id);
-    if (players.has(id)) {
-      const p = players.get(id);
-      players.delete(id);
-      removePlayerFromDOM(id);
-      showNotification(`❌ ${p.name} hat die Lobby verlassen`, 'info', 2000);
-    }
-  });
-
-  socket.on('lobby-closed', () => {
-    showNotification('ℹ️ Lobby wurde geschlossen', 'info', 2500);
-    setTimeout(() => window.location.href = 'index.html', 1500);
-  });
-
-  socket.on('eval', (data) => {
-    if (!isHost) {
-      const duration = data.duration || 300;
-      const color = data.result === 'correct' ? 'rgba(57, 255, 20, 0.3)' : 'rgba(255, 0, 0, 0.3)';
-      showEvalOverlay(color, duration);
-    }
-  });
-
-  socket.on('score-update', (data) => {
-    console.log('[socket] score-update', data);
-    const p = players.get(data.playerId);
-    if (p) {
-      p.score = data.score;
-      players.set(data.playerId, p);
-      updatePlayerScoreInDOM(data.playerId, data.score);
-    } else {
-      const newP = { id: data.playerId, name: data.name || 'Spieler', avatar: data.avatar || ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + data.playerId), score: data.score };
-      players.set(data.playerId, newP);
-      addPlayerToDOM(newP);
-    }
-  });
-
-  socket.on('game-start', (data) => {
-    showNotification('🎮 Quiz startet!', 'success', 2000);
-    // Weitere Start-Logik kann hier folgen
+  socket.on('lobby-update', (data) => {
+    console.log('Lobby-Update erhalten:', data);
+    players = new Map(data.players);
+    updatePlayerListUI();
   });
 }
 
-// Host erstellt Lobby
-async function createLobby(code) {
-  ensureSocket();
-  // Ensure socket is connected before emitting create-lobby
-  if (!socket.connected) {
-    console.log('[createLobby] socket noch nicht verbunden, warte auf connect...');
-    await new Promise((resolve, reject) => {
-      const to = setTimeout(() => { reject(new Error('socket connect timeout')); }, 5000);
-      socket.once('connect', () => { clearTimeout(to); resolve(); });
-    }).catch(err => {
-      console.warn('[createLobby] Wartedauer überschritten, versuche trotzdem zu emitten', err);
-    });
-  }
+// Lobby erstellen
+function createLobby(code) {
   return new Promise((resolve, reject) => {
-    const playerMeta = currentUser ? { id: currentUser.id || socket.id, name: currentUser.global_name || currentUser.username, avatar: getUserAvatar(currentUser), score: 0, isHost: true } : { id: socket.id, name: 'Host', avatar: '', isHost: true };
+    if (!socket || !socket.connected) {
+      return reject(new Error('socket-not-connected'));
+    }
 
-    socket.emit('create-lobby', { lobbyId: code, player: playerMeta }, (res) => {
-      if (!res || !res.ok) {
-        console.error('Lobby konnte nicht erstellt werden', res);
-        return reject(res);
+    // Build player metadata from currentUser or fallback
+    const playerMeta = currentUser ? {
+      id: currentUser.id || socket.id,
+      name: currentUser.global_name || currentUser.username || 'Host',
+      avatar: (currentUser && getUserAvatar) ? getUserAvatar(currentUser) : '',
+      score: 0,
+      isHost: true
+    } : { id: socket.id, name: 'Host', avatar: '', score: 0, isHost: true };
+
+    const payload = { lobbyId: code, player: playerMeta };
+    socket.emit('create-lobby', payload, (response) => {
+      if (response && response.ok) {
+        isHost = true;
+        lobbyCode = response.lobbyId || code;
+        try { updateLobbyCodeUI(); } catch(e){}
+        console.log('Lobby erstellt (server ack):', lobbyCode);
+        resolve(response);
+      } else if (response && response.lobbyId) {
+        // some server variants return lobbyId even without ok flag
+        isHost = true;
+        lobbyCode = response.lobbyId;
+        try { updateLobbyCodeUI(); } catch(e){}
+        resolve(response);
+      } else {
+        const err = (response && response.error) ? new Error(response.error) : new Error('create-lobby-failed');
+        reject(err);
       }
-
-      isHost = true;
-      lobbyCode = res.lobbyId || code;
-      players.clear();
-      // Host not included in players list on server by default; add host locally
-      players.set(socket.id, playerMeta);
-      try { displayHostInfo(playerMeta); } catch(e){}
-      try { addPlayerToDOM(playerMeta); } catch(e){}
-      localStorage.setItem('lobbyCode', lobbyCode);
-      localStorage.setItem('isHost', 'true');
-      console.log('Lobby erstellt', lobbyCode);
-
-      // Aktualisiere UI mit dem neuen Code
-      try { updateLobbyCodeDisplay(lobbyCode); } catch (e) { /* ignore */ }
-
-      // Show a generic success notification (do not expose code in the toast)
-      try { showNotification('✅ Lobby erfolgreich erstellt', 'success', 2500); } catch(e){}
-
-      resolve(lobbyCode);
     });
   });
 }
 
-// Spieler tritt Lobby bei
-async function joinLobby(code) {
-  ensureSocket();
+// Lobby beitreten
+function joinLobby(code) {
   return new Promise((resolve, reject) => {
-    const id = (currentUser && currentUser.id) ? currentUser.id : undefined;
-    const playerMeta = {
-      id: id || undefined,
-      name: (currentUser && (currentUser.global_name || currentUser.username)) || ('Spieler_' + Math.random().toString(36).slice(2,6)),
-      avatar: currentUser ? getUserAvatar(currentUser) : ('https://api.dicebear.com/7.x/avataaars/svg?seed=' + Math.random()),
+    if (!socket || !socket.connected) return reject(new Error('socket-not-connected'));
+
+    // Build player metadata from currentUser or fallback
+    const playerMeta = currentUser ? {
+      id: currentUser.id || socket.id,
+      name: currentUser.global_name || currentUser.username || 'Spieler',
+      avatar: (currentUser && getUserAvatar) ? getUserAvatar(currentUser) : '',
       score: 0,
       isHost: false
-    };
+    } : { id: socket.id, name: 'Spieler', avatar: '', score: 0, isHost: false };
 
-    socket.emit('join-lobby', { lobbyId: code, player: playerMeta }, (res) => {
-      if (!res || !res.ok) {
-        console.error('Lobby join failed', res);
-        return reject(res);
+    const payload = { lobbyId: code, player: playerMeta };
+    socket.emit('join-lobby', payload, (response) => {
+      if (response && response.ok) {
+        isHost = false;
+        lobbyCode = code;
+        try { updateLobbyCodeUI(); } catch(e){}
+        console.log('Lobby beigetreten (server ack):', lobbyCode);
+        resolve(response);
+      } else {
+        const err = (response && response.error) ? new Error(response.error) : new Error('join-lobby-failed');
+        reject(err);
       }
-
-      isHost = false;
-      lobbyCode = code;
-      localStorage.setItem('lobbyCode', lobbyCode);
-      localStorage.setItem('isHost', 'false');
-      console.log('Erfolgreich der Lobby beigetreten', lobbyCode);
-
-      // Aktualisiere UI mit dem Code (falls angezeigt)
-      try { updateLobbyCodeDisplay(lobbyCode); } catch (e) { /* ignore */ }
-
-      resolve(res);
     });
   });
 }
 
-// Nachricht an alle Spieler senden (Host)
-function broadcast(data, excludeId = null) {
-  if (!isHost) {
-    // Spieler senden Relay-Message zum Server
-    const payload = { lobbyId: lobbyCode, type: data.type || 'lobby-event', data: data };
-    ensureSocket().emit('lobby-message', payload);
-    return;
-  }
-
-  // Host: sende Nachricht an Server zur Verteilung
-  const payload = { lobbyId: lobbyCode, type: data.type || 'lobby-event', data: data };
-  ensureSocket().emit('lobby-message', payload);
+// Spieler-Liste in der UI aktualisieren
+function updatePlayerListUI() {
+  // Implementiere die Logik, um die Spieler-Liste in der Benutzeroberfläche zu aktualisieren
 }
 
-// Nachricht an Host senden (Spieler)
-function sendToHost(data) {
-  const payload = { lobbyId: lobbyCode, type: data.type || 'to-host', data: data, target: 'host' };
-  ensureSocket().emit('lobby-message', payload);
+// Lobby-Code in der UI aktualisieren
+function updateLobbyCodeUI() {
+  // Implementiere die Logik, um den Lobby-Code in der Benutzeroberfläche anzuzeigen
 }
 
-// Lobby-Code generieren (falls benötigt)
-function generateLobbyCode() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+// Verbindung herstellen, wenn das Skript geladen wird
+connectToServer();
+
 
 // ========================================
 // CURRENT USER LADEN - Fallback-Implementierung
@@ -439,8 +188,9 @@ document.addEventListener('DOMContentLoaded', async function() {
   initUI();
   setupEventListeners();
 
-  // Starte P2P-Verbindung
+  // Starte WebSocket-Verbindung
   try {
+    connectToServer();
     if (isHost) {
       // Host verwendet den Code aus der URL
       // Guard: ensure we only attempt to create the lobby once per page load
@@ -490,7 +240,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       console.log('✅ Client erfolgreich verbunden');
     }
   } catch (error) {
-    console.error('❌ P2P-Verbindung fehlgeschlagen:', error);
+    console.error('❌ WebSocket-Verbindung fehlgeschlagen:', error);
     showNotification('❌ Verbindung fehlgeschlagen', 'error', 3000);
     setTimeout(() => window.location.href = 'index.html', 3000);
   }
@@ -1104,7 +854,7 @@ function applySavedBackground() {
   }
 }
 
-console.log('✅ Lobby System MIT P2P geladen!');
+console.log('✅ Lobby System MIT WebSocket geladen!');
 
 // --- Debug Overlay: zeigt wichtige Werte live an ---
 (function createDebugOverlay() {

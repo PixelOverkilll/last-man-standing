@@ -397,12 +397,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const socket = window.__LMS_SOCKET;
     if (socket && socket.connected) {
       try {
-        socket.emit('create-lobby', { lobbyId: localLobbyCode, host: { id: userData.id, username: userData.username } }, (res) => {
+        // send `player` with `name` property which the server expects
+        socket.emit('create-lobby', { lobbyId: localLobbyCode, player: { id: userData.id, name: (userData.global_name || userData.username) } }, (res) => {
           console.log('[app] create-lobby ack', res);
           if (res && (res.ok === true || res.lobbyId)) {
             const finalCode = res.lobbyId || localLobbyCode;
             try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch(e){}
-            lobbyCodeInput.value = finalCode;
             setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 150);
           } else {
             alert('Erstellen der Lobby fehlgeschlagen: ' + (res && res.error ? res.error : 'Unbekannter Fehler'));
@@ -438,7 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const socket = window.__LMS_SOCKET;
     if (socket && socket.connected) {
       try {
-        socket.emit('join-lobby', { lobbyId: code, player: { id: userData.id, username: userData.username } }, (res) => {
+        // ensure we send player.name to match server expectations
+        socket.emit('join-lobby', { lobbyId: code, player: { id: userData.id, name: (userData.global_name || userData.username) } }, (res) => {
           console.log('[app] join-lobby ack', res);
           if (res && res.ok) {
             try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}

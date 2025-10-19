@@ -46,7 +46,7 @@ const newBlock = `
     const socket = window.__LMS_SOCKET;
     if (socket && socket.connected) {
       try {
-        socket.emit('create-lobby', { lobbyId: localLobbyCode, host: { id: userData.id, username: userData.username } }, (res) => {
+        socket.emit('create-lobby', { lobbyId: localLobbyCode, player: { id: userData.id, name: (userData.global_name || userData.username) } }, (res) => {
           console.log('[app] create-lobby ack', res);
           if (res && (res.ok === true || res.lobbyId)) {
             const finalCode = res.lobbyId || localLobbyCode;
@@ -87,7 +87,7 @@ const newBlock = `
     const socket = window.__LMS_SOCKET;
     if (socket && socket.connected) {
       try {
-        socket.emit('join-lobby', { lobbyId: code, player: { id: userData.id, username: userData.username } }, (res) => {
+        socket.emit('join-lobby', { lobbyId: code, player: { id: userData.id, name: (userData.global_name || userData.username) } }, (res) => {
           console.log('[app] join-lobby ack', res);
           if (res && res.ok) {
             try { localStorage.setItem('lobbyCode', code); localStorage.setItem('isHost', 'false'); } catch(e){}
@@ -113,4 +113,3 @@ const newBlock = `
 const newContent = before + start + newBlock + after;
 fs.writeFileSync(filePath, newContent, 'utf8');
 console.log('Patched file written.');
-`);
