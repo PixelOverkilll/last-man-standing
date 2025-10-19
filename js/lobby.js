@@ -166,6 +166,27 @@ function attachSocketHandlers() {
     console.log('[socket] verbunden mit', socket.id);
   });
 
+  socket.on('connect_error', (err) => {
+    console.error('[socket] connect_error', err);
+    showNotification('❌ Socket-Verbindung fehlgeschlagen', 'error', 2500);
+  });
+
+  socket.on('reconnect_attempt', (n) => {
+    console.log('[socket] reconnect attempt', n);
+    showNotification('🔁 Versuche, Socket neu zu verbinden...', 'info', 1400);
+  });
+
+  socket.on('reconnect_failed', () => {
+    console.error('[socket] reconnect_failed');
+    showNotification('❌ Socket-Reconnect fehlgeschlagen', 'error', 3000);
+  });
+
+  socket.on('reconnect', (attemptNumber) => {
+    console.log('[socket] reconnect erfolgreich nach', attemptNumber, 'Versuchen');
+    showNotification('✅ Socket wieder verbunden', 'success', 1400);
+  });
+
+
   socket.on('lobby-state', (data) => {
     console.log('[socket] lobby-state', data);
     // Setze Host-Info
@@ -238,6 +259,16 @@ function attachSocketHandlers() {
 // Host erstellt Lobby
 async function createLobby(code) {
   ensureSocket();
+  // Ensure socket is connected before emitting create-lobby
+  if (!socket.connected) {
+    console.log('[createLobby] socket noch nicht verbunden, warte auf connect...');
+    await new Promise((resolve, reject) => {
+      const to = setTimeout(() => { reject(new Error('socket connect timeout')); }, 5000);
+      socket.once('connect', () => { clearTimeout(to); resolve(); });
+    }).catch(err => {
+      console.warn('[createLobby] Wartedauer überschritten, versuche trotzdem zu emitten', err);
+    });
+  }
   return new Promise((resolve, reject) => {
     const playerMeta = currentUser ? { id: currentUser.id || socket.id, name: currentUser.global_name || currentUser.username, avatar: getUserAvatar(currentUser), score: 0, isHost: true } : { id: socket.id, name: 'Host', avatar: '', isHost: true };
 
@@ -330,6 +361,27 @@ function generateLobbyCode() {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+// ========================================
+// CURRENT USER LADEN - Fallback-Implementierung
+function loadCurrentUser() {
+  try {
+    const storedUser = localStorage.getItem('discordUser');
+    if (storedUser) {
+      currentUser = JSON.parse(storedUser);
+      console.log('👤 User geladen:', currentUser.global_name || currentUser.username || '<unknown>');
+      return true;
+    } else {
+      console.warn('❌ Kein User im localStorage gefunden (discordUser)');
+      currentUser = null;
+      return false;
+    }
+  } catch (e) {
+    console.error('Fehler beim Laden des Users aus localStorage:', e);
+    currentUser = null;
+    return false;
+  }
 }
 
 // ========================================
