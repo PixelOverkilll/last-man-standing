@@ -1084,3 +1084,38 @@ function applySavedBackground() {
 }
 
 console.log('✅ Lobby System MIT P2P geladen!');
+
+// --- Debug Overlay: zeigt wichtige Werte live an ---
+(function createDebugOverlay() {
+  try {
+    const existing = document.getElementById('lobby-debug-overlay');
+    if (existing) return;
+    const dbg = document.createElement('div');
+    dbg.id = 'lobby-debug-overlay';
+    dbg.style.cssText = 'position:fixed;left:12px;bottom:12px;background:rgba(0,0,0,0.7);color:#fff;padding:10px 12px;border-radius:8px;font-size:12px;z-index:99999;min-width:220px;box-shadow:0 8px 30px rgba(0,0,0,0.6);backdrop-filter:blur(4px);';
+    dbg.innerHTML = `
+      <div style="font-weight:700;margin-bottom:6px;color:#ffd966">Lobby Debug</div>
+      <div id="dbg-socket">socket: -</div>
+      <div id="dbg-lobby">lobbyCode: -</div>
+      <div id="dbg-isHost">isHost: -</div>
+      <div id="dbg-user">user: -</div>
+    `;
+    document.body.appendChild(dbg);
+
+    window.__lms_debug_interval = setInterval(() => {
+      const s = window.__LMS_SOCKET || (typeof socket !== 'undefined' ? socket : null);
+      const socketStatus = s ? (s.connected ? 'connected' : ('disconnected (' + (s.io && s.io.transport ? s.io.transport.name : 'unknown') + ')')) : 'no-socket';
+      const socketId = s && s.id ? s.id : '';
+      const userLabel = currentUser ? (currentUser.global_name || currentUser.username || currentUser.id || '<user>') : 'none';
+      const lobbyLabel = lobbyCode || '-';
+      const isHostLabel = !!isHost;
+      const elS = document.getElementById('dbg-socket'); if (elS) elS.textContent = `socket: ${socketStatus} ${socketId}`;
+      const elL = document.getElementById('dbg-lobby'); if (elL) elL.textContent = `lobbyCode: ${lobbyLabel}`;
+      const elH = document.getElementById('dbg-isHost'); if (elH) elH.textContent = `isHost: ${isHostLabel}`;
+      const elU = document.getElementById('dbg-user'); if (elU) elU.textContent = `user: ${userLabel}`;
+    }, 700);
+
+    window.addEventListener('beforeunload', () => { try { clearInterval(window.__lms_debug_interval); } catch (e) {} });
+  } catch (e) { /* non-fatal */ }
+})();
+
