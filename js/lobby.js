@@ -937,6 +937,27 @@ function setupEventListeners() {
 
 }
 
+// ========================================
+// UI INITIALISIERUNG
+// ========================================
+function initUI() {
+  const lobbyCodeDisplay = document.getElementById('lobby-code-display');
+  const lobbyCodeContainer = document.getElementById('lobby-code-container');
+  const hostControls = document.getElementById('host-controls');
+
+  if (lobbyCodeDisplay) lobbyCodeDisplay.textContent = lobbyCode;
+
+  if (isHost) {
+    console.log('🎮 UI als Host initialisiert');
+    if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'flex';
+    if (hostControls) hostControls.style.display = 'block';
+  } else {
+    console.log('👤 UI als Spieler initialisiert');
+    if (lobbyCodeContainer) lobbyCodeContainer.style.display = 'none';
+    if (hostControls) hostControls.style.display = 'none';
+  }
+}
+
 // Helper: zeige eval-Overlay (wiederverwendet für Host & Clients)
 function showEvalOverlay(bgColor = 'rgba(57, 255, 20, 0.3)', duration = 300) {
   try {
