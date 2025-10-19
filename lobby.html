@@ -60,8 +60,28 @@
       loadScript(socketScript, function(err) {
         if (err) {
           console.warn('socket.io client failed to load from', socketScript, ' — socket-client may not work');
+          // still try to load socket-client so local socket.io server path can be used
+          loadScript('js/socket-client.js');
+          return;
         }
-        loadScript('js/socket-client.js');
+
+        // Ensure the socket.io client actually exposed `io` before loading socket-client.js
+        var attempts = 0;
+        var maxAttempts = 12; // ~3s total (12 * 250ms)
+        function waitForIoAndLoad() {
+          if (typeof window.io !== 'undefined') {
+            loadScript('js/socket-client.js');
+            return;
+          }
+          attempts++;
+          if (attempts >= maxAttempts) {
+            console.warn('socket.io loaded but `io` not detected after waiting; loading socket-client.js anyway');
+            loadScript('js/socket-client.js');
+            return;
+          }
+          setTimeout(waitForIoAndLoad, 250);
+        }
+        waitForIoAndLoad();
       });
     })();
   </script>

@@ -772,6 +772,8 @@ function leaveLobby() {
 
   localStorage.removeItem('lobbyCode');
   localStorage.removeItem('isHost');
+  // Entferne optimistischen Host-Eintrag, falls vorhanden
+  try { localStorage.removeItem('hostPlayer'); } catch(e) { /* ignore */ }
 
   showNotification('Lobby verlassen', 'info', 500);
   setTimeout(() => window.location.href = 'index.html', 500);
@@ -907,4 +909,57 @@ console.log('✅ Lobby System MIT WebSocket geladen!');
     window.addEventListener('beforeunload', () => { try { clearInterval(window.__lms_debug_interval); } catch (e) {} });
   } catch (e) { /* non-fatal */ }
 })();
+
+function displayHostInfo(hostData) {
+  try {
+    const host = hostData || (currentUser ? { id: currentUser.id, name: currentUser.global_name || currentUser.username, avatar: (currentUser && getUserAvatar) ? getUserAvatar(currentUser) : '' } : null);
+    if (!host) return;
+
+    // Normalize fields
+    const hostId = host.id || ('host_' + Math.random().toString(36).slice(2,8));
+    const hostName = host.name || host.username || 'Host';
+    let hostAvatar = host.avatar || host.avatarUrl || '';
+
+    // Fallback avatar if none provided
+    if (!hostAvatar) {
+      try {
+        hostAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(hostId)}`;
+      } catch (e) {
+        hostAvatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=Host`;
+      }
+    }
+
+    // Ensure players map contains host
+    const existing = players.get(hostId);
+    const hostEntry = Object.assign({}, existing || {}, { id: hostId, name: hostName, avatar: hostAvatar, score: (existing && existing.score) ? existing.score : 0, isHost: true });
+    players.set(hostId, hostEntry);
+
+    // Update top-left host card
+    const avatarEl = document.getElementById('host-avatar');
+    const nameEl = document.getElementById('host-name');
+    if (avatarEl) {
+      avatarEl.src = hostAvatar;
+      avatarEl.alt = hostName + "'s avatar";
+    }
+    if (nameEl) nameEl.textContent = hostName;
+
+    // Update player card in DOM (if not present, add it)
+    try { addPlayerToDOM(hostEntry); } catch (e) { /* ignore */ }
+
+    // Make host UI visible
+    try {
+      const hostControls = document.getElementById('host-controls');
+      if (hostControls) hostControls.style.display = 'block';
+      const hostEval = document.getElementById('host-eval-buttons');
+      if (hostEval) { hostEval.style.display = 'flex'; hostEval.removeAttribute('aria-hidden'); }
+      // show lobby code UI if available
+      try { updateLobbyCodeDisplay(lobbyCode); } catch(e){}
+    } catch (e) { /* non-fatal */ }
+
+    // mark global flag
+    isHost = true;
+  } catch (err) {
+    console.error('displayHostInfo error', err);
+  }
+}
 

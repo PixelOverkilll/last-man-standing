@@ -394,6 +394,19 @@ document.addEventListener('DOMContentLoaded', function() {
     lobbyCodeInput.value = localLobbyCode;
     updateJoinButtonState();
 
+    // Optimistic host data: damit lobby.html den Host sofort anzeigen kann
+    try {
+      const hostPlayer = {
+        id: userData.id,
+        name: (userData.global_name || userData.username),
+        avatar: (userData.avatar ? `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png?size=128` : ''),
+        score: 0,
+        isHost: true
+      };
+      try { localStorage.setItem('hostPlayer', JSON.stringify(hostPlayer)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem('isHost', 'true'); localStorage.setItem('lobbyCode', localLobbyCode); } catch (e) { /* ignore */ }
+    } catch (e) { console.warn('Could not set optimistic hostPlayer', e); }
+
     const socket = window.__LMS_SOCKET;
     if (socket && socket.connected) {
       try {
@@ -405,6 +418,8 @@ document.addEventListener('DOMContentLoaded', function() {
             try { localStorage.setItem('lobbyCode', finalCode); localStorage.setItem('isHost', 'true'); } catch(e){}
             setTimeout(function(){ window.location.href = 'lobby.html?code=' + encodeURIComponent(finalCode); }, 150);
           } else {
+            // cleanup optimistic host data on failure
+            try { localStorage.removeItem('hostPlayer'); localStorage.removeItem('isHost'); localStorage.removeItem('lobbyCode'); } catch(e){}
             alert('Erstellen der Lobby fehlgeschlagen: ' + (res && res.error ? res.error : 'Unbekannter Fehler'));
             console.error('[app] create-lobby failed', res);
           }

@@ -1,0 +1,57 @@
+name: Puppeteer test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      test_url:
+        description: 'Optional URL to test (overrides default in script)'
+        required: false
+        default: ''
+
+jobs:
+  puppeteer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install apt dependencies (for Chromium)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates fonts-liberation libatk1.0-0 libatk-bridge2.0-0 libcups2 libdbus-1-3 libdrm2 libgbm1 libasound2 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 libnss3 lsb-release xdg-utils
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run Puppeteer test script
+        # Run the debug script and capture stdout/stderr to a logfile
+        # If the script exits non-zero we want to still upload artifacts; do not swallow the error here so the job can fail if desired
+        run: |
+          echo "Running puppeteer test..."
+          node server/puppeteer-live-test-debug.js "${{ github.event.inputs.test_url }}" > server/puppeteer-live-test.log 2>&1
+
+      - name: Upload screenshot artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: puppeteer-screenshot
+          path: server/puppeteer-live-test.png
+
+      - name: Upload log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: puppeteer-log
+          path: server/puppeteer-live-test.log
