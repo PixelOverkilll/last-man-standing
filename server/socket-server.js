@@ -26,8 +26,10 @@ const io = new Server(server, {
   }
 });
 
-// Lobbies: lobbyId -> { hostId, players: Map(socketId -> playerData) }
+// Lobbies: lobbyId -> { hostId, players: Map(socketId -> playerData), hostDisconnectTimer }
 const lobbies = new Map();
+
+const HOST_GRACE_MS = 10000; // Zeit, die gewährt wird, bevor eine Lobby endgültig geschlossen wird (ms)
 
 function generateLobbyId() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -40,14 +42,31 @@ io.on('connection', (socket) => {
     const lobbyId = data && data.lobbyId ? data.lobbyId : generateLobbyId();
 
     if (lobbies.has(lobbyId)) {
-      // Lobby existiert bereits
-      console.log('Lobby bereits vorhanden:', lobbyId);
+      const existing = lobbies.get(lobbyId);
+      // Wenn Lobby existiert, aber Host verloren ging (hostId === null), erlauben wir Übernahme
+      if (!existing.hostId) {
+        console.log('Lobby existiert ohne Host, übernehme Lobby:', lobbyId, 'für', socket.id);
+        // clear any pending timer
+        if (existing.hostDisconnectTimer) {
+          clearTimeout(existing.hostDisconnectTimer);
+          existing.hostDisconnectTimer = null;
+        }
+        existing.hostId = socket.id;
+        socket.join(lobbyId);
+        socket.data.player = data && data.player ? data.player : { id: socket.id, name: 'Host', avatar: '' };
+        console.log(`Lobby ${lobbyId} wieder übernommen von ${socket.id}`);
+        cb && cb({ ok: true, lobbyId });
+        return;
+      }
+
+      // Wenn Lobby aktiv ist mit Host, lehnen wir ab
+      console.log('Lobby bereits vorhanden und aktiv:', lobbyId);
       cb && cb({ ok: false, error: 'lobby-exists' });
       return;
     }
 
-    // Erstelle Lobby
-    lobbies.set(lobbyId, { hostId: socket.id, players: new Map() });
+    // Erstelle Lobby neu
+    lobbies.set(lobbyId, { hostId: socket.id, players: new Map(), hostDisconnectTimer: null });
     socket.join(lobbyId);
 
     // Optional host metadata
@@ -73,7 +92,7 @@ io.on('connection', (socket) => {
 
     // Sende aktuelles Lobby-State an den neuen Teilnehmer
     const players = Array.from(lobby.players.values());
-    const hostSocket = io.sockets.sockets.get(lobby.hostId);
+    const hostSocket = lobby.hostId ? io.sockets.sockets.get(lobby.hostId) : null;
     const hostInfo = hostSocket ? hostSocket.data.player : null;
 
     socket.emit('lobby-state', { host: hostInfo, players });
@@ -100,7 +119,7 @@ io.on('connection', (socket) => {
 
     socket.to(lobbyId).emit('player-left', { playerId: socket.id });
 
-    // Wenn Host gegangen ist, dissolve lobby
+    // Wenn Host gegangen ist, dissolve lobby (host voluntarily left)
     if (lobby.hostId === socket.id) {
       // Benachrichtige alle verbleibenden über Auflösung
       io.to(lobbyId).emit('lobby-closed', {});
@@ -134,7 +153,7 @@ io.on('connection', (socket) => {
 
       // Wenn target === 'host' -> sende nur an host
       if (target === 'host') {
-        const hostSock = io.sockets.sockets.get(lobby.hostId);
+        const hostSock = lobby.hostId ? io.sockets.sockets.get(lobby.hostId) : null;
         if (hostSock) hostSock.emit(type, data);
         return;
       }
@@ -157,14 +176,26 @@ io.on('connection', (socket) => {
     // Entferne Spieler aus allen Lobbies, falls vorhanden
     for (const [lobbyId, lobby] of lobbies.entries()) {
       if (lobby.hostId === socket.id) {
-        // Host disconnected -> close lobby
-        io.to(lobbyId).emit('lobby-closed', {});
-        lobby.players.forEach((p, sid) => {
-          const s = io.sockets.sockets.get(sid);
-          if (s) s.leave(lobbyId);
-        });
-        lobbies.delete(lobbyId);
-        console.log(`Lobby ${lobbyId} geschlossen (Host disconnected)`);
+        // Host disconnected -> don't immediately close lobby; start grace timer
+        console.log(`Host ${socket.id} disconnected from lobby ${lobbyId}, starting grace timer (${HOST_GRACE_MS}ms)`);
+        // mark host as null so others can still join and see host missing
+        lobby.hostId = null;
+        // notify clients that host is temporarily disconnected
+        io.to(lobbyId).emit('host-disconnected-temporary', {});
+        // start a timer to fully close lobby if no new host claims it
+        lobby.hostDisconnectTimer = setTimeout(() => {
+          const cur = lobbies.get(lobbyId);
+          if (cur && !cur.hostId) {
+            console.log(`Grace period expired: closing lobby ${lobbyId}`);
+            io.to(lobbyId).emit('lobby-closed', {});
+            cur.players.forEach((p, sid) => {
+              const s = io.sockets.sockets.get(sid);
+              if (s) s.leave(lobbyId);
+            });
+            lobbies.delete(lobbyId);
+          }
+        }, HOST_GRACE_MS);
+
       } else if (lobby.players.has(socket.id)) {
         lobby.players.delete(socket.id);
         io.to(lobbyId).emit('player-left', { playerId: socket.id });
